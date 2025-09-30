@@ -1,18 +1,16 @@
 import { App, Aspects } from 'aws-cdk-lib';
 import { Annotations, Match } from 'aws-cdk-lib/assertions';
 import { AwsSolutionsChecks, NagSuppressions } from 'cdk-nag';
-import { StatelessStack } from '../infrastructure/toolchain/stateless-stack';
 import { synthesisMessageToString } from './utils';
-import { StatefulStack } from '../infrastructure/toolchain/stateful-stack';
+import { PROD_ENVIRONMENT } from '@orcabus/platform-cdk-constructs/deployment-stack-pipeline';
+import { StatefulDeployStack } from '../infrastructure/toolchain/stateful-stack';
+import { StatelessDeployStack } from '../infrastructure/toolchain/stateless-stack';
 
 describe('cdk-nag-stateless-toolchain-stack', () => {
   const app = new App({});
 
-  const statelessStack = new StatelessStack(app, 'StatelessStack', {
-    env: {
-      account: '123456789',
-      region: 'ap-southeast-2',
-    },
+  const statelessStack = new StatelessDeployStack(app, 'StatelessStack', {
+    env: PROD_ENVIRONMENT,
   });
 
   Aspects.of(statelessStack).add(new AwsSolutionsChecks());
@@ -43,11 +41,8 @@ describe('cdk-nag-stateless-toolchain-stack', () => {
 describe('cdk-nag-stateful-toolchain-stack', () => {
   const app = new App({});
 
-  const statefulStack = new StatefulStack(app, 'StatefulStack', {
-    env: {
-      account: '123456789',
-      region: 'ap-southeast-2',
-    },
+  const statefulStack = new StatefulDeployStack(app, 'StatefulStack', {
+    env: PROD_ENVIRONMENT,
   });
 
   Aspects.of(statefulStack).add(new AwsSolutionsChecks());
