@@ -245,13 +245,13 @@ def get_and_merge_raw_and_label_data(library_id: str) -> Dict:
 
     # Update date fields
     redcap_raw_df["dateCollected"] = redcap_raw_df.apply(
-        lambda date_str: date_str.date_collected + "T" + date_str.time_collected + f":00{AUS_TIMEZONE_SUFFIX}",
+        lambda x: x.dateCollected + "T" + x.timeCollected + f":00{AUS_TIMEZONE_SUFFIX}",
         axis="columns"
     )
 
     # Add time to 'date_receipt' string
     redcap_raw_df["dateReceived"] = redcap_raw_df.apply(
-        lambda x: x.date_received + f"T00:00:00{AUS_TIMEZONE_SUFFIX}",
+        lambda x: x.dateReceived + f"T00:00:00{AUS_TIMEZONE_SUFFIX}",
         axis="columns"
     )
 
