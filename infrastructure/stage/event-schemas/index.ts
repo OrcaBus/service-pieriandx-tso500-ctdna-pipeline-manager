@@ -1,6 +1,11 @@
 import * as schemas from 'aws-cdk-lib/aws-eventschemas';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
-import { EVENT_SCHEMAS_DIR, SCHEMA_REGISTRY_NAME, SSM_SCHEMA_ROOT } from '../constants';
+import {
+  EVENT_SCHEMAS_DIR,
+  SCHEMA_REGISTRY_NAME,
+  SSM_SCHEMA_ROOT,
+  STACK_PREFIX,
+} from '../constants';
 import * as path from 'path';
 import * as fs from 'fs';
 import { schemaNamesList, BuildSchemaProps } from './interfaces';
@@ -19,6 +24,7 @@ export function buildSchema(scope: Construct, props: BuildSchemaProps): schemas.
     type: 'JSONSchemaDraft4',
     content: fs.readFileSync(schemaPath, 'utf-8'),
     registryName: SCHEMA_REGISTRY_NAME,
+    schemaName: `${STACK_PREFIX}--${props.schemaName}`,
   });
 }
 
