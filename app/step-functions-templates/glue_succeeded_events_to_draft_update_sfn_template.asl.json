@@ -1,0 +1,328 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Save vars",
+  "States": {
+    "Save vars": {
+      "Type": "Pass",
+      "Next": "Get workflow run object",
+      "Assign": {
+        "upstreamPortalRunId": "{% $states.input.portalRunId %}",
+        "libraries": "{% $states.input.libraries %}",
+        "upstreamWorkflowName": "{% $states.input.workflow.name %}",
+        "upstreamWorkflowVersion": "{% $states.input.workflow.version %}",
+        "analysisRunId": "{% $states.input.analysisRun ? $states.input.analysisRun.orcabusId : null %}"
+      }
+    },
+    "Get workflow run object": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": "{% $states.result.Payload %}",
+      "Arguments": {
+        "FunctionName": "${__get_workflow_run_object_lambda_function_arn__}",
+        "Payload": {
+          "portalRunId": "{% $upstreamPortalRunId %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Get pieriandx draft",
+      "Assign": {
+        "upstreamWorkflowRunObject": "{% $states.result.Payload.workflowRunObject %}",
+        "analysisRunId": "{% $states.result.Payload.workflowRunObject.analysisRun ? $states.result.Payload.workflowRunObject.analysisRun.orcabusId : null %}"
+      }
+    },
+    "Get pieriandx draft": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": "{% $states.result.Payload %}",
+      "Arguments": {
+        "FunctionName": "${__find_latest_workflow_lambda_function_arn__}",
+        "Payload": {
+          "workflowName": "${__workflow_name__}",
+          "libraries": "{% $libraries %}",
+          "analysisRunId": "{% $analysisRunId %}",
+          "status": "${__draft_status__}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Did we get a pierandx portal run id",
+      "Assign": {
+        "draftPortalRunId": "{% $states.result.Payload.workflowRunObject.portalRunId ? $states.result.Payload.workflowRunObject.portalRunId : null %}"
+      }
+    },
+    "Did we get a pierandx portal run id": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Get pieriandx draft payload",
+          "Condition": "{% $draftPortalRunId ? true : false %}"
+        }
+      ],
+      "Default": "No portal run id found"
+    },
+    "Get pieriandx draft payload": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Assign": {
+        "draftPayload": "{% $states.result.Payload.payload %}"
+      },
+      "Arguments": {
+        "FunctionName": "${__get_payload_lambda_function_arn__}",
+        "Payload": {
+          "portalRunId": "{% $draftPortalRunId %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Get workflow inputs"
+    },
+    "No portal run id found": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Put WRU Update (new)": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% $merge([\n  $draftWorkflowRunUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime\n  }\n])\n/* Remove null inputs like id */\n~> $sift(function($v, $k){$v != null}) %}",
+            "DetailType": "${__workflow_run_update_event_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__stack_source__}"
+          }
+        ]
+      },
+      "End": true
+    },
+    "Put WRSC Draft Event (legacy)": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% /* https://try.jsonata.org/r0aCmiix- */\n$merge([\n  $draftWorkflowRunUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"libraries\": ($libraries ~> | $ | {}, [\"readsets\"] |)\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
+            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__stack_source__}"
+          }
+        ]
+      },
+      "End": true
+    },
+    "No changes": {
+      "Type": "Pass",
+      "End": true
+    },
+    "Get workflow inputs": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "Get files",
+          "States": {
+            "Get files": {
+              "Type": "Parallel",
+              "Branches": [
+                {
+                  "StartAt": "Data Files Present",
+                  "States": {
+                    "Data Files Present": {
+                      "Type": "Choice",
+                      "Choices": [
+                        {
+                          "Next": "No need to query",
+                          "Condition": "{% $draftPayload.inputs.dataFiles ? true : false %}"
+                        }
+                      ],
+                      "Default": "Get files from tso500 workflow output"
+                    },
+                    "Get files from tso500 workflow output": {
+                      "Type": "Task",
+                      "Resource": "arn:aws:states:::lambda:invoke",
+                      "Arguments": {
+                        "FunctionName": "${__get_data_files_from_tso500_workflow_run_lambda_function_arn__}",
+                        "Payload": {
+                          "portalRunId": "{% $upstreamPortalRunId %}"
+                        }
+                      },
+                      "Retry": [
+                        {
+                          "ErrorEquals": [
+                            "Lambda.ServiceException",
+                            "Lambda.AWSLambdaException",
+                            "Lambda.SdkClientException",
+                            "Lambda.TooManyRequestsException"
+                          ],
+                          "IntervalSeconds": 1,
+                          "MaxAttempts": 3,
+                          "BackoffRate": 2,
+                          "JitterStrategy": "FULL"
+                        }
+                      ],
+                      "End": true,
+                      "Output": {
+                        "dataFiles": "{% $states.result.Payload.dataFiles %}"
+                      }
+                    },
+                    "No need to query": {
+                      "Type": "Pass",
+                      "End": true,
+                      "Output": {}
+                    }
+                  }
+                },
+                {
+                  "StartAt": "Placeholder (Get files)",
+                  "States": {
+                    "Placeholder (Get files)": {
+                      "Type": "Pass",
+                      "End": true
+                    }
+                  }
+                }
+              ],
+              "Output": {
+                "dataFiles": "{% $states.result[0].dataFiles ? $states.result[0].dataFiles : {} %}"
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Pass (Get workflows)",
+          "States": {
+            "Pass (Get workflows)": {
+              "Type": "Pass",
+              "End": true,
+              "Output": {}
+            }
+          }
+        }
+      ],
+      "Next": "Add workflow outputs to pieriandx inputs",
+      "Assign": {
+        "newWorkflowInputs": "{% $states.result ~> $merge %}"
+      }
+    },
+    "Add workflow outputs to pieriandx inputs": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Assign": {
+        "draftWorkflowRunUpdate": "{% $states.result.Payload.workflowRunUpdate %}",
+        "newDraftPayload": "{% $states.result.Payload.workflowRunUpdate.payload %}"
+      },
+      "Arguments": {
+        "FunctionName": "${__generate_wru_event_object_with_merged_data_lambda_function_arn__}",
+        "Payload": {
+          "portalRunId": "{% $draftPortalRunId %}",
+          "payload": "{% $draftPayload %}",
+          "upstreamData": "{% $newWorkflowInputs %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Check payload has changed"
+    },
+    "Check payload has changed": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": {
+        "hasChanged": "{% $states.result.Payload.hasChanged %}"
+      },
+      "Arguments": {
+        "FunctionName": "${__compare_payload_lambda_function_arn__}",
+        "Payload": {
+          "oldPayload": "{% $draftPayload %}",
+          "newPayload": "{% $newDraftPayload %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Payload has changed"
+    },
+    "Payload has changed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Condition": "{% $states.input.hasChanged ? true : false %}",
+          "Next": "New workflow manager is deployed",
+          "Comment": "Payload differs to previous one"
+        }
+      ],
+      "Default": "No changes"
+    },
+    "New workflow manager is deployed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
+          "Next": "Put WRU Update (new)",
+          "Comment": "Is the new workflow manager deployed in this account"
+        }
+      ],
+      "Default": "Put WRSC Draft Event (legacy)"
+    }
+  },
+  "QueryLanguage": "JSONata"
+}

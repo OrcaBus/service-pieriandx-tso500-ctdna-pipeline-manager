@@ -1,0 +1,248 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Get workflows in RUNNING mode",
+  "States": {
+    "Get workflows in RUNNING mode": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": {},
+      "Arguments": {
+        "FunctionName": "${__list_active_workflow_runs_lambda_function_arn__}",
+        "Payload": {}
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Workflows are running",
+      "Assign": {
+        "workflowRunsList": "{% $states.result.Payload.workflowRunsList %}"
+      }
+    },
+    "Workflows are running": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "For each workflow run",
+          "Condition": "{% $count($workflowRunsList) > 0 %}",
+          "Comment": "Workflows are running"
+        }
+      ],
+      "Default": "Turn off event scheduler"
+    },
+    "Turn off event scheduler": {
+      "Type": "Task",
+      "Arguments": {
+        "Name": "${__scheduler_rule_name__}"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:eventbridge:disableRule",
+      "End": true
+    },
+    "For each workflow run": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "Set Map Vars",
+        "States": {
+          "Set Map Vars": {
+            "Type": "Pass",
+            "Next": "Get existing workflow payload",
+            "Assign": {
+              "portalRunIdMapIter": "{% $states.input.portalRunId %}"
+            }
+          },
+          "Get existing workflow payload": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Output": {},
+            "Arguments": {
+              "FunctionName": "${__get_payload_lambda_function_arn__}",
+              "Payload": {
+                "portalRunId": "{% $portalRunIdMapIter %}"
+              }
+            },
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException",
+                  "Lambda.TooManyRequestsException"
+                ],
+                "IntervalSeconds": 1,
+                "MaxAttempts": 3,
+                "BackoffRate": 2,
+                "JitterStrategy": "FULL"
+              }
+            ],
+            "Next": "Determine current pieriandx status",
+            "Assign": {
+              "payloadMapIter": "{% $states.result.Payload.payload %}",
+              "engineParametersMapIter": "{% $states.result.Payload.payload.data.engineParameters %}"
+            }
+          },
+          "Determine current pieriandx status": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Arguments": {
+              "FunctionName": "${__get_informaticsjob_and_report_status_lambda_function_arn__}",
+              "Payload": {
+                "caseId": "{% $engineParametersMapIter.caseId %}"
+              }
+            },
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException",
+                  "Lambda.TooManyRequestsException"
+                ],
+                "IntervalSeconds": 1,
+                "MaxAttempts": 3,
+                "BackoffRate": 2,
+                "JitterStrategy": "FULL"
+              }
+            ],
+            "Next": "Generate WRU object",
+            "Output": {},
+            "Assign": {
+              "statusMapIter": "{% $states.result.Payload.status %}",
+              "reportIdMapIter": "{% $states.result.Payload.reportId %}",
+              "informaticsjobIdMapIter": "{% $states.result.Payload.informaticsjobId %}"
+            }
+          },
+          "Generate WRU object": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Output": "{% $states.result.Payload %}",
+            "Arguments": {
+              "FunctionName": "${__generate_wru_event_object_with_merged_data_lambda_function_arn__}",
+              "Payload": {
+                "portalRunId": "{% $portalRunIdMapIter %}",
+                "payload": "{% (\n  $engineParameters := ([\n    $payloadMapIter.data.engineParameters,\n    {\n      \"informaticsJobId\": $informaticsjobIdMapIter,\n      \"reportId\": $reportIdMapIter\n    }\n  ] ~> $merge);\n  /* Transform engine parameters */\n  $payloadMapIter ~>\n  | $.data | {\"engineParameters\": $engineParameters} |\n) %}",
+                "status": "{% $statusMapIter %}"
+              }
+            },
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException",
+                  "Lambda.TooManyRequestsException"
+                ],
+                "IntervalSeconds": 1,
+                "MaxAttempts": 3,
+                "BackoffRate": 2,
+                "JitterStrategy": "FULL"
+              }
+            ],
+            "Next": "Compare Payload",
+            "Assign": {
+              "workflowRunUpdateMapIter": "{% $states.result.Payload.workflowRunUpdate %}"
+            }
+          },
+          "Compare Payload": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Arguments": {
+              "FunctionName": "${__compare_payload_lambda_function_arn__}",
+              "Payload": {
+                "oldPayload": "{% $payloadMapIter %}",
+                "newPayload": "{% $workflowRunUpdateMapIter.payload %}"
+              }
+            },
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException",
+                  "Lambda.TooManyRequestsException"
+                ],
+                "IntervalSeconds": 1,
+                "MaxAttempts": 3,
+                "BackoffRate": 2,
+                "JitterStrategy": "FULL"
+              }
+            ],
+            "Next": "Payloads differ",
+            "Output": {
+              "hasChanged": "{% $states.result.Payload.hasChanged %}"
+            }
+          },
+          "Payloads differ": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Next": "New workflow manager deployed",
+                "Condition": "{% $states.input.hasChanged %}"
+              }
+            ],
+            "Default": "No change, skipping"
+          },
+          "No change, skipping": {
+            "Type": "Pass",
+            "End": true
+          },
+          "New workflow manager deployed": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Next": "Workflow Run Update Event",
+                "Condition": "{% ${__new_workflow_manager_is_deployed__} %}"
+              }
+            ],
+            "Default": "Workflow Run State Change event (legacy)"
+          },
+          "Workflow Run State Change event (legacy)": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::events:putEvents",
+            "Arguments": {
+              "Entries": [
+                {
+                  "Detail": "{% /* https://try.jsonata.org/r0aCmiix- */\n$merge([\n  $workflowRunUpdateMapIter,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    /* Drop readsets from libraries */\n    \"libraries\": | $workflowRunUpdateMapIter.libraries | {}, [\"readsets\"] |\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
+                  "DetailType": "${__workflow_run_state_change_event_detail_type__}",
+                  "EventBusName": "${__event_bus_name__}",
+                  "Source": "${__stack_source__}"
+                }
+              ]
+            },
+            "End": true
+          },
+          "Workflow Run Update Event": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::events:putEvents",
+            "Arguments": {
+              "Entries": [
+                {
+                  "Detail": "{% $merge([\n  $workflowRunUpdateMapIter,\n  {\n    \"timestamp\": $states.context.State.EnteredTime\n  }\n])\n/* Remove null inputs like id */\n~> $sift(function($v, $k){$v != null}) %}",
+                  "DetailType": "${__workflow_run_update_event_detail_type__}",
+                  "EventBusName": "${__event_bus_name__}",
+                  "Source": "${__stack_source__}"
+                }
+              ]
+            },
+            "End": true
+          }
+        }
+      },
+      "End": true,
+      "Items": "{% $workflowRunsList %}"
+    }
+  },
+  "QueryLanguage": "JSONata"
+}

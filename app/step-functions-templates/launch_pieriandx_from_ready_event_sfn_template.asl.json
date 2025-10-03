@@ -1,0 +1,428 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Save Vars",
+  "States": {
+    "Save Vars": {
+      "Type": "Pass",
+      "Next": "Get Inputs from SSM",
+      "Assign": {
+        "portalRunId": "{% $states.input.portalRunId %}",
+        "workflowRunName": "{% $states.input.workflowRunName %}",
+        "libraries": "{% $states.input.libraries %}",
+        "payload": "{% $states.input.payload %}",
+        "data": "{% $states.input.payload.data %}"
+      }
+    },
+    "Get Inputs from SSM": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "Get Dag from Dag Version Name",
+          "States": {
+            "Get Dag from Dag Version Name": {
+              "Type": "Task",
+              "Arguments": {
+                "Name": "{% $data.inputs.dagVersion ? '${__dag_version_ssm_parameter_prefix__}/' & $data.inputs.dagVersion : '${__dag_version_default_ssm_parameter_path__}' %}"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+              "End": true,
+              "Output": {
+                "dag": "{% $parse($states.result.Parameter.Value) %}"
+              }
+            }
+          }
+        },
+        {
+          "StartAt": "Get Panel Name from Panel Version",
+          "States": {
+            "Get Panel Name from Panel Version": {
+              "Type": "Task",
+              "Arguments": {
+                "Name": "{% $data.inputs.panelVersion ? '${__panel_name_ssm_parameter_prefix__}/' & $data.inputs.panelVersion : '${__panel_name_default_ssm_parameter_path__}' %}"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+              "End": true,
+              "Output": {
+                "panelId": "{% $states.result.Parameter.Value %}"
+              }
+            }
+          }
+        },
+        {
+          "StartAt": "Get Sequencer Path Root",
+          "States": {
+            "Get Sequencer Path Root": {
+              "Type": "Task",
+              "Arguments": {
+                "Name": "${__sequencerrun_s3_path_ssm_parameter__}"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+              "End": true,
+              "Output": {
+                "sequencerrunRoot": "{% $states.result.Parameter.Value %}"
+              }
+            }
+          }
+        }
+      ],
+      "Next": "Generate PierianDx Objects",
+      "Assign": {
+        "dag": "{% $states.result[0].dag %}",
+        "panelId": "{% $states.result[1].panelId %}",
+        "sequencerrunRoot": "{% $states.result[2].sequencerrunRoot %}"
+      }
+    },
+    "Generate PierianDx Objects": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": "{% $states.result.Payload %}",
+      "Arguments": {
+        "FunctionName": "${__generate_pieriandx_objects_lambda_function_arn__}",
+        "Payload": {
+          "dag": "{% $dag %}",
+          "caseMetadata": "{% $data.inputs.caseMetadata %}",
+          "dataFiles": "{% $data.inputs.dataFiles %}",
+          "panelId": "{% $panelId %}",
+          "instrumentRunId": "{% $data.inputs.instrumentRunId %}",
+          "sequencerrunS3PathRoot": "{% $sequencerrunRoot %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Create Case",
+      "Assign": {
+        "caseCreationObj": "{% $states.result.Payload.caseCreationObj %}",
+        "sequencerrunCreationObj": "{% $states.result.Payload.sequencerrunCreationObj %}",
+        "informaticsjobCreationObj": "{% $states.result.Payload.informaticsjobCreationObj %}",
+        "dataFiles": "{% $states.result.Payload.dataFiles %}",
+        "sequencerrunS3Path": "{% $states.result.Payload.sequencerrunS3Path %}",
+        "sampleName": "{% $states.result.Payload.sampleName %}"
+      }
+    },
+    "Create Case": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__generate_case_lambda_function_arn__}",
+        "Payload": {
+          "caseCreationObj": "{% $caseCreationObj %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Build Sequencing Run",
+      "Assign": {
+        "caseObj": "{% $states.result.Payload.caseObj %}"
+      }
+    },
+    "Build Sequencing Run": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "Upload files to s3",
+          "States": {
+            "Upload files to s3": {
+              "Type": "Map",
+              "ItemProcessor": {
+                "ProcessorConfig": {
+                  "Mode": "INLINE"
+                },
+                "StartAt": "Upload Pieriandx Sample Data to S3",
+                "States": {
+                  "Upload Pieriandx Sample Data to S3": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:states:::lambda:invoke",
+                    "Output": "{% $states.result.Payload %}",
+                    "Arguments": {
+                      "FunctionName": "${__upload_pieriandx_sample_data_to_s3_lambda_function_arn__}",
+                      "Payload": "{% $states.input %}"
+                    },
+                    "Retry": [
+                      {
+                        "ErrorEquals": [
+                          "Lambda.ServiceException",
+                          "Lambda.AWSLambdaException",
+                          "Lambda.SdkClientException",
+                          "Lambda.TooManyRequestsException"
+                        ],
+                        "IntervalSeconds": 1,
+                        "MaxAttempts": 3,
+                        "BackoffRate": 2,
+                        "JitterStrategy": "FULL"
+                      }
+                    ],
+                    "End": true
+                  }
+                }
+              },
+              "Items": "{% $dataFiles %}",
+              "Output": {},
+              "Next": "Generate Sequencerrun Creation Object"
+            },
+            "Generate Sequencerrun Creation Object": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Arguments": {
+                "FunctionName": "${__generate_sequencerrun_lambda_function_arn__}",
+                "Payload": {
+                  "sequencerrunCreationObj": "{% $sequencerrunCreationObj %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Output": {
+                "sequencerrunId": "{% $states.result.Payload.sequencerrunId %}"
+              },
+              "Next": "Add Blank VCF Workflow Txt file"
+            },
+            "Add Blank VCF Workflow Txt file": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Arguments": {
+                "FunctionName": "${__upload_pieriandx_sample_data_to_s3_lambda_function_arn__}",
+                "Payload": {
+                  "contents": "",
+                  "destUri": "{% $sequencerrunS3Path & '/VcfWorkflow.txt' %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "Output": "{% $states.input %}",
+              "Next": "Add Blank Done Txt file"
+            },
+            "Add Blank Done Txt file": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Arguments": {
+                "FunctionName": "${__upload_pieriandx_sample_data_to_s3_lambda_function_arn__}",
+                "Payload": {
+                  "contents": "",
+                  "destUri": "{% $sequencerrunS3Path & '/done.txt' %}"
+                }
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException",
+                    "Lambda.TooManyRequestsException"
+                  ],
+                  "IntervalSeconds": 1,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "JitterStrategy": "FULL"
+                }
+              ],
+              "End": true,
+              "Output": "{% $states.input %}"
+            }
+          }
+        },
+        {
+          "StartAt": "Placeholder (Build Sequencing Run)",
+          "States": {
+            "Placeholder (Build Sequencing Run)": {
+              "Type": "Pass",
+              "End": true
+            }
+          }
+        }
+      ],
+      "Next": "Create informatics Job",
+      "Assign": {
+        "sequencerrunId": "{% $states.result[0].sequencerrunId %}"
+      }
+    },
+    "Create informatics Job": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__generate_informaticsjob_lambda_function_arn__}",
+        "Payload": {
+          "informaticsjobCreationObj": "{% $informaticsjobCreationObj %}",
+          "caseId": "{% $caseObj.id %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Get payload",
+      "Assign": {
+        "informaticsjobObj": "{% $states.result.Payload.informaticsjobObj %}"
+      }
+    },
+    "Get payload": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__get_payload_lambda_function_arn__}",
+        "Payload": {
+          "portalRunId": "{% $portalRunId %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Generate WRU object",
+      "Assign": {
+        "payload": "{% $states.result.Payload.payload %}"
+      }
+    },
+    "Generate WRU object": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": "{% $states.result.Payload %}",
+      "Arguments": {
+        "FunctionName": "${__generate_wru_event_object_with_merged_data_lambda_function_arn__}",
+        "Payload": {
+          "portalRunId": "{% $portalRunId %}",
+          "payload": "{% $payload %}",
+          "engineParameters": {
+            "caseId": "{% $caseObj.id %}",
+            "informaticsJobId": "{% $informaticsjobObj.jobId %}"
+          },
+          "status": "${__runnable_status__}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Is New Workflow Manager Deployed",
+      "Assign": {
+        "workflowRunUpdateEventDetail": "{% $states.result.Payload.workflowRunUpdate %}"
+      }
+    },
+    "Is New Workflow Manager Deployed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Next": "Generate Runnable Event",
+          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
+          "Comment": "New Workflow Manager Deployed"
+        }
+      ],
+      "Default": "Generate Runnable Event (legacy)"
+    },
+    "Generate Runnable Event": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% $merge([\n  $workflowRunUpdateEventDetail,\n  {\n    \"timestamp\": $now()\n  }\n]) %}",
+            "DetailType": "${__workflow_run_update_event_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__event_source__}"
+          }
+        ]
+      },
+      "Next": "Enable Monitoring Rule"
+    },
+    "Enable Monitoring Rule": {
+      "Type": "Task",
+      "Arguments": {
+        "Name": "${__scheduler_rule_name__}"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:eventbridge:enableRule",
+      "End": true
+    },
+    "Generate Runnable Event (legacy)": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% $merge([\n  $workflowRunUpdateEventDetail,\n  {\n    \"timestamp\": $now()\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
+            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__event_source__}"
+          }
+        ]
+      },
+      "Next": "Enable Monitoring Rule"
+    }
+  },
+  "QueryLanguage": "JSONata"
+}

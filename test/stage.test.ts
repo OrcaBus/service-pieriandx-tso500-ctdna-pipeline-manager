@@ -2,33 +2,63 @@ import { App, Aspects, Stack } from 'aws-cdk-lib';
 import { Annotations, Match } from 'aws-cdk-lib/assertions';
 import { SynthesisMessage } from 'aws-cdk-lib/cx-api';
 import { AwsSolutionsChecks, NagSuppressions } from 'cdk-nag';
-import { DeployStack } from '../infrastructure/stage/deployment-stack';
+import { StatefulApplicationStack } from '../infrastructure/stage/stateful-application-stack';
+import { getStatefulStackProps, getStatelessStackProps } from '../infrastructure/stage/config';
+import { StatelessApplicationStack } from '../infrastructure/stage/stateless-application-stack';
+import { PROD_ENVIRONMENT } from '@orcabus/platform-cdk-constructs/deployment-stack-pipeline';
 
 function synthesisMessageToString(sm: SynthesisMessage): string {
   return `${sm.entry.data} [${sm.id}]`;
 }
 
-describe('cdk-nag-stateless-toolchain-stack', () => {
+describe('cdk-nag-stateful-stage-stack', () => {
   const app = new App({});
 
   // You should configure all stack (sateless, stateful) to be tested
-  const deployStack = new DeployStack(app, 'DeployStack', {
-    // Pick the prod environment to test as it is the most strict
-    // ...getStackProps('PROD'),
+  const statefulDeploy = new StatefulApplicationStack(app, 'TestStatefulDeploy', {
+    env: PROD_ENVIRONMENT,
+    ...getStatefulStackProps('PROD'),
   });
 
-  Aspects.of(deployStack).add(new AwsSolutionsChecks());
-  applyNagSuppression(deployStack);
+  Aspects.of(statefulDeploy).add(new AwsSolutionsChecks());
+  applyNagSuppression(statefulDeploy);
 
   test(`cdk-nag AwsSolutions Pack errors`, () => {
-    const errors = Annotations.fromStack(deployStack)
+    const errors = Annotations.fromStack(statefulDeploy)
       .findError('*', Match.stringLikeRegexp('AwsSolutions-.*'))
       .map(synthesisMessageToString);
     expect(errors).toHaveLength(0);
   });
 
   test(`cdk-nag AwsSolutions Pack warnings`, () => {
-    const warnings = Annotations.fromStack(deployStack)
+    const warnings = Annotations.fromStack(statefulDeploy)
+      .findWarning('*', Match.stringLikeRegexp('AwsSolutions-.*'))
+      .map(synthesisMessageToString);
+    expect(warnings).toHaveLength(0);
+  });
+});
+
+describe('cdk-nag-stateless-stage-stack', () => {
+  const app = new App({});
+
+  // You should configure all stack (sateless, stateful) to be tested
+  const statelessDeploy = new StatelessApplicationStack(app, 'TestStatelessDeploy', {
+    env: PROD_ENVIRONMENT,
+    ...getStatelessStackProps('PROD'),
+  });
+
+  Aspects.of(statelessDeploy).add(new AwsSolutionsChecks());
+  applyNagSuppression(statelessDeploy);
+
+  test(`cdk-nag AwsSolutions Pack errors`, () => {
+    const errors = Annotations.fromStack(statelessDeploy)
+      .findError('*', Match.stringLikeRegexp('AwsSolutions-.*'))
+      .map(synthesisMessageToString);
+    expect(errors).toHaveLength(0);
+  });
+
+  test(`cdk-nag AwsSolutions Pack warnings`, () => {
+    const warnings = Annotations.fromStack(statelessDeploy)
       .findWarning('*', Match.stringLikeRegexp('AwsSolutions-.*'))
       .map(synthesisMessageToString);
     expect(warnings).toHaveLength(0);
@@ -40,16 +70,9 @@ describe('cdk-nag-stateless-toolchain-stack', () => {
  * @param stack
  */
 function applyNagSuppression(stack: Stack) {
-  // These are example suppressions for this stack and should be removed and replaced with the
-  // service-specific suppressions of your app.
   NagSuppressions.addStackSuppressions(
     stack,
     [{ id: 'AwsSolutions-S10', reason: 'not require requests to use SSL' }],
-    true
-  );
-  NagSuppressions.addStackSuppressions(
-    stack,
-    [{ id: 'AwsSolutions-S1', reason: 'this is an example bucket' }],
     true
   );
 }

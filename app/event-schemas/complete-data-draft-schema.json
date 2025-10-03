@@ -1,0 +1,311 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "s3Uri": {
+      "type": "string",
+      "pattern": "^s3://[a-zA-Z0-9_-]+/[a-zA-Z0-9_./-]+"
+    },
+    "s3UriDirectory": {
+      "type": "string",
+      "pattern": "^s3://[a-zA-Z0-9_-]+/[a-zA-Z0-9_./-]+/$"
+    },
+    "dataFiles": {
+      "type": "object",
+      "properties": {
+        "cnvVcfUri": {
+          "$ref": "#/$defs/s3Uri"
+        },
+        "fusionsUri": {
+          "$ref": "#/$defs/s3Uri"
+        },
+        "tmbMetricsUri": {
+          "$ref": "#/$defs/s3Uri"
+        },
+        "samplesheetUri": {
+          "$ref": "#/$defs/s3Uri"
+        },
+        "metricsOutputUri": {
+          "$ref": "#/$defs/s3Uri"
+        },
+        "microsatOutputUri": {
+          "$ref": "#/$defs/s3Uri"
+        },
+        "hardFilteredVcfUri": {
+          "$ref": "#/$defs/s3Uri"
+        }
+      },
+      "required": [
+        "cnvVcfUri",
+        "fusionsUri",
+        "tmbMetricsUri",
+        "samplesheetUri",
+        "metricsOutputUri",
+        "microsatOutputUri",
+        "hardFilteredVcfUri"
+      ]
+    },
+    "sampleReception": {
+      "type": "object",
+      "properties": {
+        "dateReceived": {
+          "type": "string",
+          "format": "date"
+        },
+        "dateCollected": {
+          "type": "string",
+          "format": "date"
+        },
+        "dateAccessioned": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": ["dateReceived", "dateCollected", "dateAccessioned"]
+    },
+    "patientInformation": {
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "dateOfBirth": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": ["firstName", "lastName", "dateOfBirth"]
+    },
+    "requestingPhysician": {
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        }
+      },
+      "required": ["firstName", "lastName"]
+    },
+    "medicalFacility": {
+      "type": "object",
+      "properties": {
+        "facility": {
+          "type": "string"
+        },
+        "hospitalNumber": {
+          "type": "number"
+        }
+      },
+      "required": ["facility", "hospitalNumber"]
+    },
+    "medicalRecordNumbers": {
+      "type": "object",
+      "properties": {
+        "hospitalNumber": {
+          "type": "string"
+        },
+        "medicalFacility": {
+          "$ref": "#/$defs/medicalFacility"
+        }
+      },
+      "required": ["hospitalNumber", "medicalFacility"]
+    },
+    "study": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "subjectIdentifier": {
+          "type": "string"
+        }
+      }
+    },
+    "baseCaseMetadata": {
+      "type": "object",
+      "properties": {
+        "indication": {
+          "type": "string"
+        },
+        "sampleType": {
+          "$ref": "#/$defs/sampleType"
+        },
+        "diseaseCode": {
+          "type": "number"
+        },
+        "diseaseLabel": {
+          "type": "string"
+        },
+        "isIdentified": {
+          "type": "boolean"
+        },
+        "specimenCode": {
+          "type": "number"
+        },
+        "specimenLabel": {
+          "type": "string"
+        },
+        "externalSpecimenId": {
+          "type": "string"
+        },
+        "caseAccessionNumber": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "indication",
+        "sampleType",
+        "diseaseCode",
+        "specimenCode",
+        "externalSpecimenId",
+        "caseAccessionNumber",
+        "isIdentified"
+      ]
+    },
+    "identifiedCaseMetadata": {
+      "type": "object",
+      "properties": {
+        "sampleReception": {
+          "$ref": "#/$defs/sampleReception"
+        },
+        "patientInformation": {
+          "$ref": "#/$defs/patientInformation"
+        },
+        "requestingPhysician": {
+          "$ref": "#/$defs/requestingPhysician"
+        },
+        "medicalRecordNumbers": {
+          "$ref": "#/$defs/medicalRecordNumbers"
+        }
+      },
+      "required": [
+        "sampleReception",
+        "patientInformation",
+        "requestingPhysician",
+        "medicalRecordNumbers"
+      ]
+    },
+    "deidentifiedCaseMetadata": {
+      "type": "object",
+      "required": ["study"]
+    },
+    "panelVersion": {
+      "type": "string"
+    },
+    "sampleType": {
+      "type": "string",
+      "enum": [
+        "patientcare",
+        "clinical_trial",
+        "validation",
+        ",proficiency_testing",
+        "assay_updates",
+        "panel_review_sample"
+      ]
+    },
+    "tags": {
+      "type": "object",
+      "properties": {
+        "libraryId": {
+          "type": "string",
+          "examples": ["L2401540"]
+        },
+        "subjectId": {
+          "type": "string",
+          "examples": ["SBJ05828"]
+        },
+        "individualId": {
+          "type": "string",
+          "examples": ["SBJ05828"]
+        },
+        "projectId": {
+          "type": "string",
+          "examples": ["9689947"]
+        },
+        "fastqRgidList": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "examples": ["CCTAGGAA+GCTACGTA.2.241024_A00130_0336_BHW7MVDSXC"]
+          },
+          "examples": [["CCTAGGAA+GCTACGTA.2.241024_A00130_0336_BHW7MVDSXC"]]
+        },
+        "panelVersion": {
+          "$ref": "#/$defs/panelVersion"
+        },
+        "instrumentRunId": {
+          "type": "string",
+          "examples": ["241024_A00130_0336_BHW7MVDSXC"]
+        },
+        "isIdentified": {
+          "type": "boolean"
+        },
+        "sampleType": {
+          "$ref": "#/$defs/sampleType"
+        }
+      },
+      "required": [
+        "libraryId",
+        "subjectId",
+        "individualId",
+        "projectId",
+        "fastqRgidList",
+        "panelVersion",
+        "instrumentRunId",
+        "isIdentified",
+        "sampleType"
+      ]
+    },
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "dataFiles": {
+          "$ref": "#/$defs/dataFiles"
+        },
+        "caseMetadata": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/$defs/baseCaseMetadata"
+            },
+            {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/identifiedCaseMetadata"
+                },
+                {
+                  "$ref": "#/$defs/deidentifiedCaseMetadata"
+                }
+              ]
+            }
+          ]
+        },
+        "dagVersion": {
+          "type": "string"
+        },
+        "panelVersion": {
+          "$ref": "#/$defs/panelVersion"
+        },
+        "instrumentRunId": {
+          "type": "string",
+          "examples": ["241024_A00130_0336_BHW7MVDSXC"]
+        }
+      },
+      "required": ["dataFiles", "caseMetadata", "panelVersion", "dagVersion", "instrumentRunId"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "tags": {
+      "$ref": "#/$defs/tags"
+    },
+    "inputs": {
+      "$ref": "#/$defs/inputs"
+    }
+  },
+  "required": ["tags", "inputs"]
+}
