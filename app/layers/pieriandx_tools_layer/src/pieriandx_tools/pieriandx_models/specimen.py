@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-
+import re
 # Standard imports
 import typing
 from typing import Optional, Union, TypedDict, NotRequired, cast
 from datetime import datetime
-
 import pandas as pd
 
 # Local imported attributes
@@ -22,6 +21,9 @@ if typing.TYPE_CHECKING:
     from .medical_record_number import MedicalRecordNumberDict
     from .specimen_type import SpecimenTypeDict
 
+
+# Globals
+ISOFORMAT_SUFFIX = re.compile(r'([+-])(\d{2}):(\d{2})$')
 
 class SpecimenDict(TypedDict):
     accessionNumber: str
@@ -72,10 +74,19 @@ class Specimen(PierianDxBaseModel):
         data['accessionNumber'] = data.pop('caseAccessionNumber')
 
         # Fix formats
-        data['dateAccessioned'] = pd.to_datetime(data.pop('dateAccessioned')).isoformat().replace("+00:00", "+0000")
-        data['dateReceived'] = pd.to_datetime(data.pop('dateReceived')).isoformat().replace("+00:00", "+0000")
+        data['dateAccessioned'] = ISOFORMAT_SUFFIX.sub(
+            r'\1\2\3',
+            pd.to_datetime(data.pop('dateAccessioned')).isoformat(timespec='seconds'),
+        )
+        data['dateReceived'] = ISOFORMAT_SUFFIX.sub(
+            r'\1\2\3',
+            pd.to_datetime(data.pop('dateReceived')).isoformat(timespec='seconds')
+        )
         # Note the typo here is intentional
-        data['datecollected'] = pd.to_datetime(data.pop('dateCollected')).isoformat().replace("+00:00", "+0000")
+        data['datecollected'] = ISOFORMAT_SUFFIX.sub(
+            r'\1\2\3',
+            pd.to_datetime(data.pop('dateCollected')).isoformat(timespec='seconds')
+        )
 
         # Fix specimen type
         _ = data.pop('specimenType')

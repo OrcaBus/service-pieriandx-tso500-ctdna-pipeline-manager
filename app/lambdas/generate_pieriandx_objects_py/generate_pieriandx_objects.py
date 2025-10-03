@@ -169,15 +169,12 @@ def handler(event, context):
             case_accession_number=case_accession_number,
             date_accessioned=pd.to_datetime(
                 case_metadata.get("sampleReception").get("dateAccessioned"),
-                utc=True
             ),
             date_received=pd.to_datetime(
                 case_metadata.get("sampleReception").get("dateReceived"),
-                utc=True
             ),
             date_collected=pd.to_datetime(
                 case_metadata.get("sampleReception").get("dateCollected"),
-                utc=True
             ),
             external_specimen_id=case_metadata.get("externalSpecimenId"),
             specimen_label=case_metadata.get("specimenLabel"),
@@ -492,7 +489,7 @@ def handler(event, context):
 #     # }
 
 #
-# #  # De-Idenitified Patient
+#  # De-Idenitified Patient
 # if __name__ == "__main__":
 #     import json
 #     from os import environ
@@ -548,106 +545,106 @@ def handler(event, context):
 #             indent=2
 #         )
 #     )
-
-    # Yields
-    # {
-    #   "case_creation_obj": {
-    #     "identified": false,
-    #     "panelName": "tso500_DRAGEN_ctDNA_v2_1_Universityofmelbourne",  # pragma: allowlist secret
-    #     "sampleType": "patientcare",
-    #     "specimens": [
-    #       {
-    #         "accessionNumber": "L2400160__V2__20241003f44a5496",
-    #         "dateAccessioned": "2024-10-03T00:00:00Z",
-    #         "dateReceived": "2024-10-03T00:00:00Z",
-    #         "datecollected": "2024-10-03T00:00:00Z",
-    #         "externalSpecimenId": "SSq-CompMM-1pc-10646259ilm",
-    #         "name": "primarySpecimen",
-    #         "type": {
-    #           "code": "122561005",
-    #           "label": "Blood specimen from patient"
-    #         },
-    #         "studyIdentifier": "Testing",
-    #         "studySubjectIdentifier": "CMM1pc-10646259ilm"
-    #       }
-    #     ],
-    #     "dagDescription": "tso500_ctdna_workflow",
-    #     "dagName": "cromwell_tso500_ctdna_workflow_1.0.4",
-    #     "disease": {
-    #       "code": "55342001",
-    #       "label": "Neoplastic disease"
-    #     }
-    #   },
-    #   "sequencerrun_creation_obj": {
-    #     "runId": "240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496",
-    #     "specimens": [
-    #       {
-    #         "accessionNumber": "L2400160__V2__20241003f44a5496",
-    #         "barcode": "AGAGGCAACC-CCATCATTAG",
-    #         "lane": "1",
-    #         "sampleId": "L2400160",
-    #         "sampleType": "DNA"
-    #       }
-    #     ],
-    #     "type": "pairedEnd"
-    #   },
-    #   "informaticsjob_creation_obj": {
-    #     "input": [
-    #       {
-    #         "accessionNumber": "L2400160__V2__20241003f44a5496",
-    #         "sequencerRunInfos": [
-    #           {
-    #             "runId": "240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496",
-    #             "barcode": "AGAGGCAACC-CCATCATTAG",
-    #             "lane": "1",
-    #             "sampleId": "L2400160",
-    #             "sampleType": "DNA"
-    #           }
-    #         ]
-    #       }
-    #     ]
-    #   },
-    #   "data_files": [
-    #     {
-    #       "src_uri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/cttsov2/20241003ead8ad9f/Logs_Intermediates/DragenCaller/L2400160/L2400160.microsat_output.json",
-    #       "dest_uri": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496/Data/Intensities/BaseCalls/L2400160.microsat_output.json",
-    #       "needs_decompression": false,
-    #       "contents": null
-    #     },
-    #     {
-    #       "src_uri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/cttsov2/20241003ead8ad9f/Logs_Intermediates/Tmb/L2400160/L2400160.tmb.metrics.csv",
-    #       "dest_uri": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496/Data/Intensities/BaseCalls/L2400160.tmb.metrics.csv",
-    #       "needs_decompression": false,
-    #       "contents": null
-    #     },
-    #     {
-    #       "src_uri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/cttsov2/20241003ead8ad9f/Results/L2400160/L2400160.cnv.vcf.gz",
-    #       "dest_uri": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496/Data/Intensities/BaseCalls/L2400160.cnv.vcf",
-    #       "needs_decompression": true,
-    #       "contents": null
-    #     },
-    #     {
-    #       "src_uri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/cttsov2/20241003ead8ad9f/Results/L2400160/L2400160.hard-filtered.vcf.gz",
-    #       "dest_uri": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496/Data/Intensities/BaseCalls/L2400160.hard-filtered.vcf",
-    #       "needs_decompression": true,
-    #       "contents": null
-    #     },
-    #     {
-    #       "src_uri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/cttsov2/20241003ead8ad9f/Results/L2400160/L2400160_Fusions.csv",
-    #       "dest_uri": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496/Data/Intensities/BaseCalls/L2400160_Fusions.csv",
-    #       "needs_decompression": false,
-    #       "contents": null
-    #     },
-    #     {
-    #       "src_uri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/cttsov2/20241003ead8ad9f/Results/L2400160/L2400160_MetricsOutput.tsv",
-    #       "dest_uri": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496/Data/Intensities/BaseCalls/L2400160_MetricsOutput.tsv",
-    #       "needs_decompression": false,
-    #       "contents": null
-    #     }
-    #   ],
-    #   "sequencerrun_s3_path": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496",
-    #   "sample_name": "L2400160"
-    # }
+#
+#     Yields
+#     {
+#       "case_creation_obj": {
+#         "identified": false,
+#         "panelName": "tso500_DRAGEN_ctDNA_v2_1_Universityofmelbourne",  # pragma: allowlist secret
+#         "sampleType": "patientcare",
+#         "specimens": [
+#           {
+#             "accessionNumber": "L2400160__V2__20241003f44a5496",
+#             "dateAccessioned": "2024-10-03T00:00:00Z",
+#             "dateReceived": "2024-10-03T00:00:00Z",
+#             "datecollected": "2024-10-03T00:00:00Z",
+#             "externalSpecimenId": "SSq-CompMM-1pc-10646259ilm",
+#             "name": "primarySpecimen",
+#             "type": {
+#               "code": "122561005",
+#               "label": "Blood specimen from patient"
+#             },
+#             "studyIdentifier": "Testing",
+#             "studySubjectIdentifier": "CMM1pc-10646259ilm"
+#           }
+#         ],
+#         "dagDescription": "tso500_ctdna_workflow",
+#         "dagName": "cromwell_tso500_ctdna_workflow_1.0.4",
+#         "disease": {
+#           "code": "55342001",
+#           "label": "Neoplastic disease"
+#         }
+#       },
+#       "sequencerrun_creation_obj": {
+#         "runId": "240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496",
+#         "specimens": [
+#           {
+#             "accessionNumber": "L2400160__V2__20241003f44a5496",
+#             "barcode": "AGAGGCAACC-CCATCATTAG",
+#             "lane": "1",
+#             "sampleId": "L2400160",
+#             "sampleType": "DNA"
+#           }
+#         ],
+#         "type": "pairedEnd"
+#       },
+#       "informaticsjob_creation_obj": {
+#         "input": [
+#           {
+#             "accessionNumber": "L2400160__V2__20241003f44a5496",
+#             "sequencerRunInfos": [
+#               {
+#                 "runId": "240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496",
+#                 "barcode": "AGAGGCAACC-CCATCATTAG",
+#                 "lane": "1",
+#                 "sampleId": "L2400160",
+#                 "sampleType": "DNA"
+#               }
+#             ]
+#           }
+#         ]
+#       },
+#       "data_files": [
+#         {
+#           "src_uri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/cttsov2/20241003ead8ad9f/Logs_Intermediates/DragenCaller/L2400160/L2400160.microsat_output.json",
+#           "dest_uri": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496/Data/Intensities/BaseCalls/L2400160.microsat_output.json",
+#           "needs_decompression": false,
+#           "contents": null
+#         },
+#         {
+#           "src_uri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/cttsov2/20241003ead8ad9f/Logs_Intermediates/Tmb/L2400160/L2400160.tmb.metrics.csv",
+#           "dest_uri": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496/Data/Intensities/BaseCalls/L2400160.tmb.metrics.csv",
+#           "needs_decompression": false,
+#           "contents": null
+#         },
+#         {
+#           "src_uri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/cttsov2/20241003ead8ad9f/Results/L2400160/L2400160.cnv.vcf.gz",
+#           "dest_uri": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496/Data/Intensities/BaseCalls/L2400160.cnv.vcf",
+#           "needs_decompression": true,
+#           "contents": null
+#         },
+#         {
+#           "src_uri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/cttsov2/20241003ead8ad9f/Results/L2400160/L2400160.hard-filtered.vcf.gz",
+#           "dest_uri": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496/Data/Intensities/BaseCalls/L2400160.hard-filtered.vcf",
+#           "needs_decompression": true,
+#           "contents": null
+#         },
+#         {
+#           "src_uri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/cttsov2/20241003ead8ad9f/Results/L2400160/L2400160_Fusions.csv",
+#           "dest_uri": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496/Data/Intensities/BaseCalls/L2400160_Fusions.csv",
+#           "needs_decompression": false,
+#           "contents": null
+#         },
+#         {
+#           "src_uri": "s3://pipeline-dev-cache-503977275616-ap-southeast-2/byob-icav2/development/analysis/cttsov2/20241003ead8ad9f/Results/L2400160/L2400160_MetricsOutput.tsv",
+#           "dest_uri": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496/Data/Intensities/BaseCalls/L2400160_MetricsOutput.tsv",
+#           "needs_decompression": false,
+#           "contents": null
+#         }
+#       ],
+#       "sequencerrun_s3_path": "s3://pdx-cgwxfer-test/melbournetest/240229_A00130_0288_BH5HM2DSXC__L2400160__V2__20241003f44a5496__20241003f44a5496",
+#       "sample_name": "L2400160"
+#     }
 
 # PROD
 # if __name__ == "__main__":
