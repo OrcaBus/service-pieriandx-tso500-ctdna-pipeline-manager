@@ -6,9 +6,9 @@ import { Duration } from 'aws-cdk-lib';
  */
 export type EventBridgeRuleName =
   // Dragen Succeeded
-  | 'dragenTso500ctDnaSucceededEventLegacy'
-  | 'dragenTso500ctDnaSucceededEvent'
-  // Yet to be implemented
+  | 'upstreamSucceededEventLegacy'
+  | 'upstreamSucceededEvent'
+  // Draft events
   | 'wrscDraftLegacy'
   | 'wrscDraft'
   // Pre-ready
@@ -19,9 +19,9 @@ export type EventBridgeRuleName =
 
 export const eventBridgeRuleNameList: EventBridgeRuleName[] = [
   // Dragen Succeeded event
-  'dragenTso500ctDnaSucceededEventLegacy',
-  'dragenTso500ctDnaSucceededEvent',
-  // Yet to be implemented
+  'upstreamSucceededEventLegacy',
+  'upstreamSucceededEvent',
+  // Draft events
   'wrscDraftLegacy',
   'wrscDraft',
   // Pre-ready

@@ -53,11 +53,10 @@ export function buildAllEventBridgeTargets(props: EventBridgeTargetsProps) {
   for (const eventBridgeTargetsName of eventBridgeTargetsNameList) {
     switch (eventBridgeTargetsName) {
       // Dragen Succeeded to Glue
-      case 'dragenTso500CtdnaSucceededEventLegacyToGlueSucceededEvents': {
+      case 'upstreamSucceededEventLegacyToGlueSucceededEvents': {
         buildWrscLegacyToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
-            (eventBridgeObject) =>
-              eventBridgeObject.ruleName === 'dragenTso500ctDnaSucceededEventLegacy'
+            (eventBridgeObject) => eventBridgeObject.ruleName === 'upstreamSucceededEventLegacy'
           )?.ruleObject,
           stateMachineObj: props.stepFunctionObjects.find(
             (sfnObject) => sfnObject.stateMachineName === 'glueSucceededEventsToDraftUpdate'
@@ -65,10 +64,10 @@ export function buildAllEventBridgeTargets(props: EventBridgeTargetsProps) {
         });
         break;
       }
-      case 'dragenTso500CtdnaSucceededEventToGlueSucceededEvents': {
+      case 'upstreamSucceededEventToGlueSucceededEvents': {
         buildWrscToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
-            (eventBridgeObject) => eventBridgeObject.ruleName === 'dragenTso500ctDnaSucceededEvent'
+            (eventBridgeObject) => eventBridgeObject.ruleName === 'upstreamSucceededEvent'
           )?.ruleObject,
           stateMachineObj: props.stepFunctionObjects.find(
             (sfnObject) => sfnObject.stateMachineName === 'glueSucceededEventsToDraftUpdate'
@@ -103,7 +102,7 @@ export function buildAllEventBridgeTargets(props: EventBridgeTargetsProps) {
 
       // Validate draft data
       case 'draftLegacyToValidateDraftSfnTarget': {
-        buildWrscToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
+        buildWrscLegacyToSfnTarget(<AddSfnAsEventBridgeTargetProps>{
           eventBridgeRuleObj: props.eventBridgeRuleObjects.find(
             (eventBridgeObject) => eventBridgeObject.ruleName === 'wrscDraftLegacy'
           )?.ruleObject,
