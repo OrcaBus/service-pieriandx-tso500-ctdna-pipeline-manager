@@ -1,7 +1,5 @@
 /* Event Bridge Rules */
 import {
-  // Yet to be utilised
-  // BuildDraftRuleProps,
   BuildReadyRuleProps,
   eventBridgeRuleNameList,
   EventBridgeRuleObject,
@@ -38,7 +36,7 @@ function buildMonitorPdxRule(scope: Construct, props: ScheduledEventBridgeRulePr
   });
 }
 
-function dragenTso500CtdnaLegacySucceededEventPattern(): EventPattern {
+function upstreamLegacySucceededEventPattern(): EventPattern {
   return {
     detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
     source: [WORKFLOW_MANAGER_EVENT_SOURCE],
@@ -74,7 +72,7 @@ function buildWorkflowManagerLegacyReadyEventPattern(): EventPattern {
   };
 }
 
-function dragenTso500CtdnaSucceededEventPattern(): EventPattern {
+function upstreamSucceededEventPattern(): EventPattern {
   return {
     detailType: [WORKFLOW_RUN_UPDATE_DETAIL_TYPE],
     source: [WORKFLOW_MANAGER_EVENT_SOURCE],
@@ -124,24 +122,24 @@ function buildEventRule(scope: Construct, props: EventBridgeRuleProps): Rule {
   });
 }
 
-function buildDragenTso500CtdnaSucceededWorkflowRunStateChangeLegacyEventRule(
+function buildUpstreamSucceededWorkflowRunStateChangeLegacyEventRule(
   scope: Construct,
   props: BuildDraftRuleProps
 ): Rule {
   return buildEventRule(scope, {
     ruleName: props.ruleName,
-    eventPattern: dragenTso500CtdnaLegacySucceededEventPattern(),
+    eventPattern: upstreamLegacySucceededEventPattern(),
     eventBus: props.eventBus,
   });
 }
 
-function buildDragenTso500CtdnaSucceededWorkflowRunUpdateEventRule(
+function buildUpstreamSucceededWorkflowRunUpdateEventRule(
   scope: Construct,
   props: BuildDraftRuleProps
 ): Rule {
   return buildEventRule(scope, {
     ruleName: props.ruleName,
-    eventPattern: dragenTso500CtdnaSucceededEventPattern(),
+    eventPattern: upstreamSucceededEventPattern(),
     eventBus: props.eventBus,
   });
 }
@@ -193,20 +191,20 @@ export function buildAllEventRules(
   // Iterate over the eventBridgeNameList and create the event rules
   for (const ruleName of eventBridgeRuleNameList) {
     switch (ruleName) {
-      case 'dragenTso500ctDnaSucceededEventLegacy': {
+      case 'upstreamSucceededEventLegacy': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,
-          ruleObject: buildDragenTso500CtdnaSucceededWorkflowRunStateChangeLegacyEventRule(scope, {
+          ruleObject: buildUpstreamSucceededWorkflowRunStateChangeLegacyEventRule(scope, {
             ruleName: ruleName,
             eventBus: props.eventBus,
           }),
         });
         break;
       }
-      case 'dragenTso500ctDnaSucceededEvent': {
+      case 'upstreamSucceededEvent': {
         eventBridgeRuleObjects.push({
           ruleName: ruleName,
-          ruleObject: buildDragenTso500CtdnaSucceededWorkflowRunUpdateEventRule(scope, {
+          ruleObject: buildUpstreamSucceededWorkflowRunUpdateEventRule(scope, {
             ruleName: ruleName,
             eventBus: props.eventBus,
           }),
