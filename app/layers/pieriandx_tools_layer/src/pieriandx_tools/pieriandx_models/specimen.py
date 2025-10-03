@@ -63,7 +63,7 @@ class Specimen(PierianDxBaseModel):
     specimen_label: str
     race: Optional[RaceType] = None
     gender: Optional[GenderType] = None
-    #hl_7_specimen_id: Optional[str] = None
+    hl_7_specimen_id: Optional[str] = None
     specimen_type: 'SpecimenType'
 
     def to_dict(self, **kwargs) -> SpecimenDict:
