@@ -22,7 +22,6 @@ import {
   WORKFLOW_MANAGER_EVENT_SOURCE,
   WORKFLOW_NAME,
   WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE,
-  WORKFLOW_RUN_UPDATE_DETAIL_TYPE,
 } from '../constants';
 
 /*
@@ -74,7 +73,7 @@ function buildWorkflowManagerLegacyReadyEventPattern(): EventPattern {
 
 function upstreamSucceededEventPattern(): EventPattern {
   return {
-    detailType: [WORKFLOW_RUN_UPDATE_DETAIL_TYPE],
+    detailType: [WORKFLOW_RUN_STATE_CHANGE_DETAIL_TYPE],
     source: [WORKFLOW_MANAGER_EVENT_SOURCE],
     detail: {
       workflow: {
