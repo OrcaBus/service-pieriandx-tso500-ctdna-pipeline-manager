@@ -105,14 +105,14 @@
     "medicalRecordNumbers": {
       "type": "object",
       "properties": {
-        "hospitalNumber": {
+        "mrn": {
           "type": "string"
         },
         "medicalFacility": {
           "$ref": "#/$defs/medicalFacility"
         }
       },
-      "required": ["hospitalNumber", "medicalFacility"]
+      "required": ["mrn", "medicalFacility"]
     },
     "study": {
       "type": "object",
@@ -202,7 +202,7 @@
         "patientcare",
         "clinical_trial",
         "validation",
-        ",proficiency_testing",
+        "proficiency_testing",
         "assay_updates",
         "panel_review_sample"
       ]

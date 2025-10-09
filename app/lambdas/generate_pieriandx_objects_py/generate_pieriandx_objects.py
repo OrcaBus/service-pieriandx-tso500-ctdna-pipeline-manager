@@ -189,6 +189,7 @@ def handler(event, context):
             first_name=case_metadata.get("patientInformation", {}).get("firstName", None),
             last_name=case_metadata.get("patientInformation", {}).get("lastName", None),
             ## Identified only
+            # Hospital number is converted to a string.
             **dict(filter(
                 lambda kv_iter_: kv_iter_[1] is not None,
                 {
