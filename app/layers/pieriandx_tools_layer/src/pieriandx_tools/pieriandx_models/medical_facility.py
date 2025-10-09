@@ -16,20 +16,13 @@ class MedicalFacility(PierianDxBaseModel):
     hospital_number: Optional[int] = None
 
     def to_dict(self, **kwargs) -> MedicalFacilityDict:
+        data = super().to_dict(**kwargs)
+
+        # Update hospital number to be a string if it exists
+        if 'hospitalNumber' in data:
+            data['hospitalNumber'] = str(data['hospitalNumber'])
+
         return cast(
             MedicalFacilityDict,
-            cast(
-                object,
-                dict(filter(
-                    lambda item: item[1] is not None,
-                    {
-                        "facility": self.facility if self.facility is not None else None,
-                        "hospitalNumber": (
-                            str(self.hospital_number)
-                            if self.hospital_number is not None
-                            else None
-                        ),
-                    }.items()
-                ))
-            )
+            data
         )
