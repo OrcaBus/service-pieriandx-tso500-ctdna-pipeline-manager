@@ -56,7 +56,7 @@ export const INSTITUTION: Record<StageName, string> = {
 export const S3_SEQUENCERRUN_ROOT: Record<StageName, string> = {
   BETA: `s3://pdx-cgwxfer-test/${INSTITUTION.BETA}/`,
   GAMMA: `s3://pdx-cgwxfer-test/${INSTITUTION.GAMMA}/`,
-  PROD: `s3://pdx-cgwxfer/${INSTITUTION.PROD}/`,
+  PROD: `s3://pdx-xfer/${INSTITUTION.PROD}/`,
 };
 
 /* S3 Constants */
