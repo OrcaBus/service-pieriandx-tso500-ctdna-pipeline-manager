@@ -21,9 +21,12 @@ class MedicalRecordNumber(PierianDxBaseModel):
     mrn: str
     medical_facility: 'MedicalFacility'
 
-    if typing.TYPE_CHECKING:
-        def to_dict(self) -> MedicalRecordNumberDict:
-            pass
+    def to_dict(self, **kwargs) -> MedicalRecordNumberDict:
+        data = super().to_dict(**kwargs)
+
+        data["medicalFacility"] = self.medical_facility.to_dict(**kwargs)
+
+        return data
 
 # Local model imports at the bottom to prevent circular imports
 from .medical_facility import MedicalFacility

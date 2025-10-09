@@ -32,10 +32,10 @@ logger.setLevel(level=logging.INFO)
 AUS_TIMEZONE = pytz.timezone("Australia/Melbourne")
 AUS_TIME = datetime.now(AUS_TIMEZONE)
 AUS_TIME_CURRENT_DEFAULT_DICT = {
-    "date_accessioned": AUS_TIME.date().isoformat(),
-    "date_collected": AUS_TIME.date().isoformat(),
-    "time_collected": AUS_TIME.strftime("%H:%M"),
-    "date_received": AUS_TIME.date().isoformat()
+    "dateAccessioned": AUS_TIME.date().isoformat(),
+    "dateCollected": AUS_TIME.date().isoformat(),
+    "timeCollected": AUS_TIME.strftime("%H:%M"),
+    "dateReceived": AUS_TIME.date().isoformat()
 }
 AUS_TIMEZONE_SUFFIX = AUS_TIME.strftime("%z")
 
@@ -133,8 +133,9 @@ def launch_redcap_raw_lambda(library_id: str) -> pd.DataFrame:
             "clinician_firstname": "requestingPhysicianFirstName",
             "clinician_lastname": "requestingPhysicianLastName",
             "libraryid": "libraryId",
-            "mrn": "patientUrn",
+            "patient_urn": "patientUrn",
             "disease": "diseaseId",
+            "time_collected": "timeCollected",
             "date_collection": "dateCollected",
             "date_receipt": "dateReceived"
         },

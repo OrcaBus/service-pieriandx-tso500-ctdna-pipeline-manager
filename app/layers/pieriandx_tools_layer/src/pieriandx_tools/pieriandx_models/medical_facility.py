@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # Standard imports
-import typing
-from typing import Optional, NotRequired, TypedDict
+from typing import Optional, NotRequired, TypedDict, cast
 
 # Local imports
 from . import PierianDxBaseModel
@@ -14,8 +13,16 @@ class MedicalFacilityDict(TypedDict):
 
 class MedicalFacility(PierianDxBaseModel):
     facility: Optional[str] = None
-    hospital_number: Optional[str] = None
+    hospital_number: Optional[int] = None
 
-    if typing.TYPE_CHECKING:
-        def to_dict(self, **kwargs) -> MedicalFacilityDict:
-            pass
+    def to_dict(self, **kwargs) -> MedicalFacilityDict:
+        data = super().to_dict(**kwargs)
+
+        # Update hospital number to be a string if it exists
+        if 'hospitalNumber' in data:
+            data['hospitalNumber'] = str(data['hospitalNumber'])
+
+        return cast(
+            MedicalFacilityDict,
+            data
+        )

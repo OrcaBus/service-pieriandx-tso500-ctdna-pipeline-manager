@@ -111,6 +111,7 @@ class IdentifiedSpecimen(Specimen):
 
         # Update some of the keys to match the expected output type
         data['dateOfBirth'] = self.date_of_birth.date().isoformat()
+        _ = data.pop("medicalRecordNumber")
         data['medicalRecordNumbers'] = [self.medical_record_number.to_dict()]
         return cast(
             'IdentifiedSpecimenDict',

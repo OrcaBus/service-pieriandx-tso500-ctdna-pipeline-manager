@@ -29,7 +29,6 @@ Payload will look a bit like this:
 
 # Standard Imports
 from typing import Dict
-from urllib.error import HTTPError
 
 import pytz
 from datetime import datetime
@@ -40,7 +39,6 @@ import pandas as pd
 from orcabus_api_tools.metadata import get_library_from_library_id
 from orcabus_api_tools.metadata.models import Library
 from pieriandx_tools.pieriandx_helpers import get_pieriandx_client
-
 
 # Set logger
 logging.basicConfig(level=logging.INFO)
@@ -53,10 +51,10 @@ AUS_TIME_AS_STR = f"{AUS_TIME.date().isoformat()}T{AUS_TIME.time().isoformat(tim
 
 DEFAULT_INDICATION = "NA"
 DEFAULT_REQUESTING_PHYSICIAN = {
-    "first_name": "Sean",
-    "last_name": "Grimmond"
+    "firstName": "Sean",
+    "lastName": "Grimmond"
 }
-DEFAULT_HOSPITAL_NUMBER = "99"
+DEFAULT_HOSPITAL_NUMBER = 99
 DEFAULT_SPECIMEN_CODE = 122561005
 DEFAULT_SPECIMEN_LABEL = 'primarySpecimen'
 
@@ -97,6 +95,9 @@ def handler(event, context) -> Dict:
     sample_type = event.get("sampleType")
     # Sample type might also be in the redcap data, which should take priority
     sample_type = redcap_dict.get("sampleType", sample_type)
+    # And also rename 'Patient Care Sample' to 'PatientCare'
+    if sample_type is not None:
+        sample_type = sample_type.replace(" ", "").replace("Sample", "").lower()
 
     # Get the specimen label from the event
     specimen_label = event.get("specimenLabel", DEFAULT_SPECIMEN_LABEL)
@@ -180,8 +181,8 @@ def handler(event, context) -> Dict:
 
     # Get requesting physician from redcap
     requesting_physician = {
-        "firstName": redcap_dict.get("requesting_physician_first_name", DEFAULT_REQUESTING_PHYSICIAN["first_name"]),
-        "lastName": redcap_dict.get("requesting_physician_last_name", DEFAULT_REQUESTING_PHYSICIAN["last_name"])
+        "firstName": redcap_dict.get("requestingPhysicianFirstName", DEFAULT_REQUESTING_PHYSICIAN["firstName"]),
+        "lastName": redcap_dict.get("requestingPhysicianLastName", DEFAULT_REQUESTING_PHYSICIAN["lastName"])
     }
 
     # Return the payload
