@@ -131,6 +131,7 @@ def handler(event, context):
     case_metadata = event.get("caseMetadata")
     instrument_run_id = event.get("instrumentRunId")
     case_accession_number = case_metadata.get("caseAccessionNumber")
+    # Get data files
     data_files = event.get("dataFiles", {})
 
     # Read samplesheet - we need this for the sequencer run infos

@@ -41,6 +41,8 @@ from orcabus_api_tools.workflow import get_latest_payload_from_portal_run_id
 # Globals / Type hints
 OutputKeysType = Literal[
     "microsatOutputUri",
+    "geneCovReportUri",
+    "exonCovReportUri",
     "tmbMetricsUri",
     "cnvVcfUri",
     "hardFilteredVcfUri",
@@ -51,6 +53,8 @@ OutputKeysType = Literal[
 
 OUTPUT_KEYS_LIST: List[OutputKeysType] = [
     "microsatOutputUri",
+    "geneCovReportUri",
+    "exonCovReportUri",
     "tmbMetricsUri",
     "cnvVcfUri",
     "hardFilteredVcfUri",
@@ -61,6 +65,8 @@ OUTPUT_KEYS_LIST: List[OutputKeysType] = [
 
 URL_EXTENSION_MAP: Dict[OutputKeysType, str] = {
     "microsatOutputUri": "Logs_Intermediates/DragenCaller/{SAMPLE_ID}/{SAMPLE_ID}.microsat_output.json",
+    "geneCovReportUri": "Results/{SAMPLE_ID}/{SAMPLE_ID}.gene_cov_report.tsv",
+    "exonCovReportUri": "Results/{SAMPLE_ID}/{SAMPLE_ID}.exon_cov_report.tsv",
     "tmbMetricsUri": "Logs_Intermediates/Tmb/{SAMPLE_ID}/{SAMPLE_ID}.tmb.metrics.csv",
     "cnvVcfUri": "Results/{SAMPLE_ID}/{SAMPLE_ID}.cnv.vcf.gz",
     "hardFilteredVcfUri": "Results/{SAMPLE_ID}/{SAMPLE_ID}.hard-filtered.vcf.gz",

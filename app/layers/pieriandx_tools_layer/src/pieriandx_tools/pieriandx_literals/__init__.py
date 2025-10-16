@@ -47,6 +47,8 @@ SequencingType = Literal[
 
 DataType = Literal[
     "microsatOutputUri",
+    "geneCovReportUri",
+    "exonCovReportUri",
     "tmbMetricsUri",
     "cnvVcfUri",
     "hardFilteredVcfUri",
@@ -57,6 +59,8 @@ DataType = Literal[
 
 DataNameSuffixType = Literal[
     ".microsat_output.json",
+    ".gene_cov_report.tsv",
+    ".exon_cov_report.tsv",
     ".tmb.metrics.csv",
     ".cnv.vcf",
     ".hard-filtered.vcf",
@@ -66,6 +70,8 @@ DataNameSuffixType = Literal[
 
 DataNameSuffixByDataType: Dict[DataType, DataNameSuffixType] = {
     "microsatOutputUri": ".microsat_output.json",
+    "geneCovReportUri": ".gene_cov_report.tsv",
+    "exonCovReportUri": ".exon_cov_report.tsv",
     "tmbMetricsUri": ".tmb.metrics.csv",
     "cnvVcfUri": ".cnv.vcf",
     "hardFilteredVcfUri": ".hard-filtered.vcf",

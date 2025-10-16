@@ -55,8 +55,10 @@ class DataFile(PierianDxBaseModel):
 
         return cast(
             DataFileDict,
-            dict(filter(
-                lambda kv_iter: kv_iter[0] in DataFileDict.__annotations__,
-                data.items()
-            ))
+            cast(object,
+                 dict(filter(
+                    lambda kv_iter: kv_iter[0] in DataFileDict.__annotations__,
+                    data.items()
+                ))
+            )
         )

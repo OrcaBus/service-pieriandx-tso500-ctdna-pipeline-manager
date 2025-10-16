@@ -30,6 +30,12 @@
         "microsatOutputUri": {
           "$ref": "#/$defs/s3Uri"
         },
+        "geneCovReportUri": {
+          "$ref": "#/$defs/s3Uri"
+        },
+        "exonCovReportUri": {
+          "$ref": "#/$defs/s3Uri"
+        },
         "hardFilteredVcfUri": {
           "$ref": "#/$defs/s3Uri"
         }
@@ -41,6 +47,8 @@
         "samplesheetUri",
         "metricsOutputUri",
         "microsatOutputUri",
+        "geneCovReportUri",
+        "exonCovReportUri",
         "hardFilteredVcfUri"
       ]
     },
