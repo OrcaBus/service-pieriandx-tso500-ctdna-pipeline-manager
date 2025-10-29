@@ -274,7 +274,7 @@ export const PIERIANDX_COLLECT_AUTH_TOKEN_LAMBDA_NAME = 'collectPierianDxAccessT
 export const NEW_WORKFLOW_MANAGER_IS_DEPLOYED: Record<StageName, boolean> = {
   BETA: true,
   GAMMA: true,
-  PROD: false,
+  PROD: true,
 };
 
 // Used to group event rules and step functions
