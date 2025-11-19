@@ -37,11 +37,10 @@ def handler(event, context):
     # Remove 'currentState' and replace with 'status'
     draft_workflow_update['status'] = draft_workflow_update.pop('currentState')['status']
 
-    # If the data files already exist in the payload, use those
+    # If the data files already exist in the payload (and not in the upstream data)
     if (
             payload.get("data", {}).get("inputs", {}).get("dataFiles", None) is not None and
-            # The datafiles dict is not empty
-            payload["data"]["inputs"]["dataFiles"]
+            data_files is None
     ):
         data_files = payload["data"]["inputs"]["dataFiles"]
 
