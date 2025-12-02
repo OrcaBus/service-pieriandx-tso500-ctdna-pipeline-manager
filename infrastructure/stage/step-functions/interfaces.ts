@@ -128,7 +128,6 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     'generateCase',
     'generateSequencerrun',
     'generateInformaticsjob',
-    'generateOutputDataPayload',
     'uploadPieriandxSampleDataToS3',
     // Re update object
     'getPayload',
@@ -139,6 +138,7 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     'listActiveWorkflowRuns',
     'getPayload',
     'getInformaticsjobAndReportStatus',
+    'generateOutputDataPayload',
     'generateWruEventObjectWithMergedData',
     'comparePayload',
   ],
