@@ -4,6 +4,12 @@ export type DagVersion = '1.0.4';
 
 export type PanelName = 'main' | 'subpanel';
 
+export type PanelId =
+  // label: TSO500 DRAGEN ctDNA v2.6 - Yes the version difference is correct
+  | 'tso500_DRAGEN_ctDNA_v2_1_Universityofmelbourne' // pragma: allowlist secret
+  // label: TSO500 DRAGEN ctDNA v2.6 Subpanel - Yes the version difference is correct
+  | 'tso500_DRAGEN_ctDNA_v2_1_subpanel_Universityofmelbourne'; // pragma: allowlist secret
+
 export interface Dag {
   name: string;
   description: string;

@@ -1,7 +1,7 @@
 /* Imports */
 import path from 'path';
 import { DATA_SCHEMA_REGISTRY_NAME } from '@orcabus/platform-cdk-constructs/shared-config/event-bridge';
-import { Dag, DagVersion, PanelName, ProjectInfo, ProjectName } from './interfaces';
+import { Dag, DagVersion, PanelId, PanelName, ProjectInfo, ProjectName } from './interfaces';
 import {
   ACCOUNT_ID_ALIAS,
   REGION,
@@ -69,7 +69,7 @@ export const S3_PIERIANDX_LOOKUP_BUCKET: Record<StageName, string> = {
 /* SSM Parameter values */
 
 // Panels
-export const PANEL_MAP: Record<PanelName, string> = {
+export const PANEL_MAP: Record<PanelName, PanelId> = {
   main: 'tso500_DRAGEN_ctDNA_v2_1_Universityofmelbourne', // pragma: allowlist secret
   subpanel: 'tso500_DRAGEN_ctDNA_v2_1_subpanel_Universityofmelbourne', // pragma: allowlist secret
 };
