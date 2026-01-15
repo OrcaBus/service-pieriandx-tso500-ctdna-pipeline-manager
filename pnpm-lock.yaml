@@ -4,19 +4,22 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  diff@<8.0.3: '>=8.0.3'
+
 importers:
 
   .:
     dependencies:
       '@aws-cdk/aws-lambda-python-alpha':
-        specifier: 2.216.0-alpha.0
-        version: 2.216.0-alpha.0(aws-cdk-lib@2.234.1(constructs@10.4.4))(constructs@10.4.4)
+        specifier: 2.235.0-alpha.0
+        version: 2.235.0-alpha.0(aws-cdk-lib@2.235.0(constructs@10.4.4))(constructs@10.4.4)
       '@orcabus/platform-cdk-constructs':
         specifier: 0.0.81
-        version: 0.0.81(@aws-cdk/aws-lambda-python-alpha@2.216.0-alpha.0(aws-cdk-lib@2.234.1(constructs@10.4.4))(constructs@10.4.4))(aws-cdk-lib@2.234.1(constructs@10.4.4))(constructs@10.4.4)
+        version: 0.0.81(@aws-cdk/aws-lambda-python-alpha@2.235.0-alpha.0(aws-cdk-lib@2.235.0(constructs@10.4.4))(constructs@10.4.4))(aws-cdk-lib@2.235.0(constructs@10.4.4))(constructs@10.4.4)
       aws-cdk-lib:
-        specifier: ^2.234.1
-        version: 2.234.1(constructs@10.4.4)
+        specifier: ^2.235.0
+        version: 2.235.0(constructs@10.4.4)
       constructs:
         specifier: ^10.4.4
         version: 10.4.4
@@ -28,14 +31,14 @@ importers:
         specifier: ^29.5.14
         version: 29.5.14
       '@types/node':
-        specifier: ^22.19.6
-        version: 22.19.6
+        specifier: ^22.19.7
+        version: 22.19.7
       aws-cdk:
-        specifier: ^2.1100.3
-        version: 2.1100.3
+        specifier: ^2.1101.0
+        version: 2.1101.0
       cdk-nag:
         specifier: ^2.37.55
-        version: 2.37.55(aws-cdk-lib@2.234.1(constructs@10.4.4))(constructs@10.4.4)
+        version: 2.37.55(aws-cdk-lib@2.235.0(constructs@10.4.4))(constructs@10.4.4)
       eslint:
         specifier: ^9.39.2
         version: 9.39.2
@@ -44,7 +47,7 @@ importers:
         version: 16.5.0
       jest:
         specifier: ^29.7.0
-        version: 29.7.0(@types/node@22.19.6)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3))
+        version: 29.7.0(@types/node@22.19.7)(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3))
       prettier:
         specifier: ^3.8.0
         version: 3.8.0
@@ -53,10 +56,10 @@ importers:
         version: 0.0.4
       ts-jest:
         specifier: ^29.4.6
-        version: 29.4.6(@babel/core@7.28.6)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.6))(jest-util@29.7.0)(jest@29.7.0(@types/node@22.19.6)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3)))(typescript@5.9.3)
+        version: 29.4.6(@babel/core@7.28.6)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.6))(jest-util@29.7.0)(jest@29.7.0(@types/node@22.19.7)(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3)))(typescript@5.9.3)
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@types/node@22.19.6)(typescript@5.9.3)
+        version: 10.9.2(@types/node@22.19.7)(typescript@5.9.3)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -66,17 +69,17 @@ importers:
 
 packages:
 
-  '@aws-cdk/asset-awscli-v1@2.2.258':
-    resolution: {integrity: sha512-TL3I9cIue0bAsuwrmjgjAQaEH6JL09y49FVQMDhrz4jJ2iPKuHtdrYd7ydm02t1YZdPZE2M0VNj6VD4fGIFpvw==}
+  '@aws-cdk/asset-awscli-v1@2.2.261':
+    resolution: {integrity: sha512-XkKvgG/OxrEYtVTt2Q9gaD58Qn90fnX/dNczL4k6myeii7UgAGPmqh+I+1uKohCWGKIKd+4Gz2xWBL/tPi4YIA==}
 
   '@aws-cdk/asset-node-proxy-agent-v6@2.1.0':
     resolution: {integrity: sha512-7bY3J8GCVxLupn/kNmpPc5VJz8grx+4RKfnnJiO1LG+uxkZfANZG3RMHhE+qQxxwkyQ9/MfPtTpf748UhR425A==}
 
-  '@aws-cdk/aws-lambda-python-alpha@2.216.0-alpha.0':
-    resolution: {integrity: sha512-Q3QEIUSM3wPR7mZJkFEsA5Xk9+bYx+aMOLXvAlbRZR93XwGRGMs2r24NJ6baylvKvoR71yiYUH4gAB4YOT2NCA==}
+  '@aws-cdk/aws-lambda-python-alpha@2.235.0-alpha.0':
+    resolution: {integrity: sha512-Ik3ylQVcke+2CU9Dl2JJcQDbFOeJVFJPEAN09Hcg8g4TFGZQvKlD9WjRWZOSDhK6fAvHTiTeU4HmuIwa/3rPgQ==}
     engines: {node: '>= 18.0.0'}
     peerDependencies:
-      aws-cdk-lib: ^2.216.0
+      aws-cdk-lib: ^2.235.0
       constructs: ^10.0.0
 
   '@aws-cdk/cloud-assembly-schema@48.20.0':
@@ -463,8 +466,8 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
-  '@types/node@22.19.6':
-    resolution: {integrity: sha512-qm+G8HuG6hOHQigsi7VGuLjUVu6TtBo/F05zvX04Mw2uCg9Dv0Qxy3Qw7j41SidlTcl5D/5yg0SEZqOB+EqZnQ==}
+  '@types/node@22.19.7':
+    resolution: {integrity: sha512-MciR4AKGHWl7xwxkBa6xUGxQJ4VBOmPTF7sL+iGzuahOFaO0jHCsuEfS80pan1ef4gWId1oWOweIhrDEYLuaOw==}
 
   '@types/stack-utils@2.0.3':
     resolution: {integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==}
@@ -580,8 +583,8 @@ packages:
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
 
-  aws-cdk-lib@2.234.1:
-    resolution: {integrity: sha512-2oNqAA1qjF9xHCom6yHuY8KE6UltK7pTg3egf/t1+C6/OFEaw9+jyhCWmTasGmvjyQSkbvKiCPZco0l+XVyxiQ==}
+  aws-cdk-lib@2.235.0:
+    resolution: {integrity: sha512-zoTa+fw4J0sjYrn4LJcWAKxQ8i9DMqWdLo7MkP6nNgtqEaypajF9t6Ucasx93/pAQ2bmGV61EM2oVEOtVnpenA==}
     engines: {node: '>= 18.0.0'}
     peerDependencies:
       constructs: ^10.0.0
@@ -598,8 +601,8 @@ packages:
       - yaml
       - mime-types
 
-  aws-cdk@2.1100.3:
-    resolution: {integrity: sha512-jeSamF+IwPJKhqMir7Cw+2IoeHsmNFc/SoDAlOS9BYM8Wrd0Q1jJd3GcJOFzsMcWv9mcBAP5o23amyKHu03dXA==}
+  aws-cdk@2.1101.0:
+    resolution: {integrity: sha512-5EP+t13OFzE0SaK+KY/di9ZcXQYwnhDtM8kqEMjEvqhj+K3eqtV0DDI1YjthOoVMBAHgZK9juKPqxfwwRprBPQ==}
     engines: {node: '>= 18.0.0'}
     hasBin: true
 
@@ -767,8 +770,8 @@ packages:
     resolution: {integrity: sha512-EjePK1srD3P08o2j4f0ExnylqRs5B9tJjcp9t1krH2qRi8CCdsYfwe9JgSLurFBWwq4uOlipzfk5fHNvwFKr8Q==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
-  diff@4.0.2:
-    resolution: {integrity: sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==}
+  diff@8.0.3:
+    resolution: {integrity: sha512-qejHi7bcSD4hQAZE0tNAawRK1ZtafHDmMTMkrrIGgSLl7hTnQHmKCeB45xAcbfTqK2zowkM3j3bHt/4b/ARbYQ==}
     engines: {node: '>=0.3.1'}
 
   electron-to-chromium@1.5.267:
@@ -1677,13 +1680,13 @@ packages:
 
 snapshots:
 
-  '@aws-cdk/asset-awscli-v1@2.2.258': {}
+  '@aws-cdk/asset-awscli-v1@2.2.261': {}
 
   '@aws-cdk/asset-node-proxy-agent-v6@2.1.0': {}
 
-  '@aws-cdk/aws-lambda-python-alpha@2.216.0-alpha.0(aws-cdk-lib@2.234.1(constructs@10.4.4))(constructs@10.4.4)':
+  '@aws-cdk/aws-lambda-python-alpha@2.235.0-alpha.0(aws-cdk-lib@2.235.0(constructs@10.4.4))(constructs@10.4.4)':
     dependencies:
-      aws-cdk-lib: 2.234.1(constructs@10.4.4)
+      aws-cdk-lib: 2.235.0(constructs@10.4.4)
       constructs: 10.4.4
 
   '@aws-cdk/cloud-assembly-schema@48.20.0': {}
@@ -1951,27 +1954,27 @@ snapshots:
   '@jest/console@29.7.0':
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       chalk: 4.1.2
       jest-message-util: 29.7.0
       jest-util: 29.7.0
       slash: 3.0.0
 
-  '@jest/core@29.7.0(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3))':
+  '@jest/core@29.7.0(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3))':
     dependencies:
       '@jest/console': 29.7.0
       '@jest/reporters': 29.7.0
       '@jest/test-result': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       ansi-escapes: 4.3.2
       chalk: 4.1.2
       ci-info: 3.9.0
       exit: 0.1.2
       graceful-fs: 4.2.11
       jest-changed-files: 29.7.0
-      jest-config: 29.7.0(@types/node@22.19.6)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3))
+      jest-config: 29.7.0(@types/node@22.19.7)(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3))
       jest-haste-map: 29.7.0
       jest-message-util: 29.7.0
       jest-regex-util: 29.6.3
@@ -1996,7 +1999,7 @@ snapshots:
     dependencies:
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       jest-mock: 29.7.0
 
   '@jest/expect-utils@29.7.0':
@@ -2014,7 +2017,7 @@ snapshots:
     dependencies:
       '@jest/types': 29.6.3
       '@sinonjs/fake-timers': 10.3.0
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       jest-message-util: 29.7.0
       jest-mock: 29.7.0
       jest-util: 29.7.0
@@ -2036,7 +2039,7 @@ snapshots:
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       '@jridgewell/trace-mapping': 0.3.31
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       chalk: 4.1.2
       collect-v8-coverage: 1.0.3
       exit: 0.1.2
@@ -2106,7 +2109,7 @@ snapshots:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       '@types/yargs': 17.0.35
       chalk: 4.1.2
 
@@ -2134,10 +2137,10 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@orcabus/platform-cdk-constructs@0.0.81(@aws-cdk/aws-lambda-python-alpha@2.216.0-alpha.0(aws-cdk-lib@2.234.1(constructs@10.4.4))(constructs@10.4.4))(aws-cdk-lib@2.234.1(constructs@10.4.4))(constructs@10.4.4)':
+  '@orcabus/platform-cdk-constructs@0.0.81(@aws-cdk/aws-lambda-python-alpha@2.235.0-alpha.0(aws-cdk-lib@2.235.0(constructs@10.4.4))(constructs@10.4.4))(aws-cdk-lib@2.235.0(constructs@10.4.4))(constructs@10.4.4)':
     dependencies:
-      '@aws-cdk/aws-lambda-python-alpha': 2.216.0-alpha.0(aws-cdk-lib@2.234.1(constructs@10.4.4))(constructs@10.4.4)
-      aws-cdk-lib: 2.234.1(constructs@10.4.4)
+      '@aws-cdk/aws-lambda-python-alpha': 2.235.0-alpha.0(aws-cdk-lib@2.235.0(constructs@10.4.4))(constructs@10.4.4)
+      aws-cdk-lib: 2.235.0(constructs@10.4.4)
       constructs: 10.4.4
 
   '@sinclair/typebox@0.27.8': {}
@@ -2183,7 +2186,7 @@ snapshots:
 
   '@types/graceful-fs@4.1.9':
     dependencies:
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
 
   '@types/istanbul-lib-coverage@2.0.6': {}
 
@@ -2202,7 +2205,7 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
-  '@types/node@22.19.6':
+  '@types/node@22.19.7':
     dependencies:
       undici-types: 6.21.0
 
@@ -2347,14 +2350,14 @@ snapshots:
 
   argparse@2.0.1: {}
 
-  aws-cdk-lib@2.234.1(constructs@10.4.4):
+  aws-cdk-lib@2.235.0(constructs@10.4.4):
     dependencies:
-      '@aws-cdk/asset-awscli-v1': 2.2.258
+      '@aws-cdk/asset-awscli-v1': 2.2.261
       '@aws-cdk/asset-node-proxy-agent-v6': 2.1.0
       '@aws-cdk/cloud-assembly-schema': 48.20.0
       constructs: 10.4.4
 
-  aws-cdk@2.1100.3:
+  aws-cdk@2.1101.0:
     optionalDependencies:
       fsevents: 2.3.2
 
@@ -2456,9 +2459,9 @@ snapshots:
 
   caniuse-lite@1.0.30001764: {}
 
-  cdk-nag@2.37.55(aws-cdk-lib@2.234.1(constructs@10.4.4))(constructs@10.4.4):
+  cdk-nag@2.37.55(aws-cdk-lib@2.235.0(constructs@10.4.4))(constructs@10.4.4):
     dependencies:
-      aws-cdk-lib: 2.234.1(constructs@10.4.4)
+      aws-cdk-lib: 2.235.0(constructs@10.4.4)
       constructs: 10.4.4
 
   chalk@4.1.2:
@@ -2494,13 +2497,13 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
-  create-jest@29.7.0(@types/node@22.19.6)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3)):
+  create-jest@29.7.0(@types/node@22.19.7)(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3)):
     dependencies:
       '@jest/types': 29.6.3
       chalk: 4.1.2
       exit: 0.1.2
       graceful-fs: 4.2.11
-      jest-config: 29.7.0(@types/node@22.19.6)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3))
+      jest-config: 29.7.0(@types/node@22.19.7)(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3))
       jest-util: 29.7.0
       prompts: 2.4.2
     transitivePeerDependencies:
@@ -2531,7 +2534,7 @@ snapshots:
 
   diff-sequences@29.6.3: {}
 
-  diff@4.0.2: {}
+  diff@8.0.3: {}
 
   electron-to-chromium@1.5.267: {}
 
@@ -2832,7 +2835,7 @@ snapshots:
       '@jest/expect': 29.7.0
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       chalk: 4.1.2
       co: 4.6.0
       dedent: 1.7.1
@@ -2852,16 +2855,16 @@ snapshots:
       - babel-plugin-macros
       - supports-color
 
-  jest-cli@29.7.0(@types/node@22.19.6)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3)):
+  jest-cli@29.7.0(@types/node@22.19.7)(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3)):
     dependencies:
-      '@jest/core': 29.7.0(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3))
+      '@jest/core': 29.7.0(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3))
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
       chalk: 4.1.2
-      create-jest: 29.7.0(@types/node@22.19.6)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3))
+      create-jest: 29.7.0(@types/node@22.19.7)(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3))
       exit: 0.1.2
       import-local: 3.2.0
-      jest-config: 29.7.0(@types/node@22.19.6)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3))
+      jest-config: 29.7.0(@types/node@22.19.7)(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3))
       jest-util: 29.7.0
       jest-validate: 29.7.0
       yargs: 17.7.2
@@ -2871,7 +2874,7 @@ snapshots:
       - supports-color
       - ts-node
 
-  jest-config@29.7.0(@types/node@22.19.6)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3)):
+  jest-config@29.7.0(@types/node@22.19.7)(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3)):
     dependencies:
       '@babel/core': 7.28.6
       '@jest/test-sequencer': 29.7.0
@@ -2896,8 +2899,8 @@ snapshots:
       slash: 3.0.0
       strip-json-comments: 3.1.1
     optionalDependencies:
-      '@types/node': 22.19.6
-      ts-node: 10.9.2(@types/node@22.19.6)(typescript@5.9.3)
+      '@types/node': 22.19.7
+      ts-node: 10.9.2(@types/node@22.19.7)(typescript@5.9.3)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color
@@ -2926,7 +2929,7 @@ snapshots:
       '@jest/environment': 29.7.0
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       jest-mock: 29.7.0
       jest-util: 29.7.0
 
@@ -2936,7 +2939,7 @@ snapshots:
     dependencies:
       '@jest/types': 29.6.3
       '@types/graceful-fs': 4.1.9
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       anymatch: 3.1.3
       fb-watchman: 2.0.2
       graceful-fs: 4.2.11
@@ -2975,7 +2978,7 @@ snapshots:
   jest-mock@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       jest-util: 29.7.0
 
   jest-pnp-resolver@1.2.3(jest-resolve@29.7.0):
@@ -3010,7 +3013,7 @@ snapshots:
       '@jest/test-result': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       chalk: 4.1.2
       emittery: 0.13.1
       graceful-fs: 4.2.11
@@ -3038,7 +3041,7 @@ snapshots:
       '@jest/test-result': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       chalk: 4.1.2
       cjs-module-lexer: 1.4.3
       collect-v8-coverage: 1.0.3
@@ -3084,7 +3087,7 @@ snapshots:
   jest-util@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       chalk: 4.1.2
       ci-info: 3.9.0
       graceful-fs: 4.2.11
@@ -3103,7 +3106,7 @@ snapshots:
     dependencies:
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       ansi-escapes: 4.3.2
       chalk: 4.1.2
       emittery: 0.13.1
@@ -3112,17 +3115,17 @@ snapshots:
 
   jest-worker@29.7.0:
     dependencies:
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
-  jest@29.7.0(@types/node@22.19.6)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3)):
+  jest@29.7.0(@types/node@22.19.7)(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3)):
     dependencies:
-      '@jest/core': 29.7.0(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3))
+      '@jest/core': 29.7.0(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3))
       '@jest/types': 29.6.3
       import-local: 3.2.0
-      jest-cli: 29.7.0(@types/node@22.19.6)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3))
+      jest-cli: 29.7.0(@types/node@22.19.7)(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3))
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -3416,12 +3419,12 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
-  ts-jest@29.4.6(@babel/core@7.28.6)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.6))(jest-util@29.7.0)(jest@29.7.0(@types/node@22.19.6)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3)))(typescript@5.9.3):
+  ts-jest@29.4.6(@babel/core@7.28.6)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.28.6))(jest-util@29.7.0)(jest@29.7.0(@types/node@22.19.7)(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3)))(typescript@5.9.3):
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
       handlebars: 4.7.8
-      jest: 29.7.0(@types/node@22.19.6)(ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3))
+      jest: 29.7.0(@types/node@22.19.7)(ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3))
       json5: 2.2.3
       lodash.memoize: 4.1.2
       make-error: 1.3.6
@@ -3436,19 +3439,19 @@ snapshots:
       babel-jest: 29.7.0(@babel/core@7.28.6)
       jest-util: 29.7.0
 
-  ts-node@10.9.2(@types/node@22.19.6)(typescript@5.9.3):
+  ts-node@10.9.2(@types/node@22.19.7)(typescript@5.9.3):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       '@tsconfig/node10': 1.0.12
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
-      '@types/node': 22.19.6
+      '@types/node': 22.19.7
       acorn: 8.15.0
       acorn-walk: 8.3.4
       arg: 4.1.3
       create-require: 1.1.1
-      diff: 4.0.2
+      diff: 8.0.3
       make-error: 1.3.6
       typescript: 5.9.3
       v8-compile-cache-lib: 3.0.1
