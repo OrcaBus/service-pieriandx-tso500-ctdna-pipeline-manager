@@ -99,7 +99,9 @@
             "Next": "Determine current pieriandx status",
             "Assign": {
               "payloadMapIter": "{% $states.result.Payload.payload %}",
-              "engineParametersMapIter": "{% $states.result.Payload.payload.data.engineParameters %}"
+              "engineParametersMapIter": "{% $states.result.Payload.payload.data.engineParameters %}",
+              "inputsMapIter": "{% $states.result.Payload.payload.data.inputs %}",
+              "tagsMapIter": "{% $states.result.Payload.payload.tags %}"
             }
           },
           "Determine current pieriandx status": {
@@ -125,13 +127,56 @@
                 "JitterStrategy": "FULL"
               }
             ],
-            "Next": "Generate WRU object",
+            "Next": "Status is Succeeded",
             "Output": {},
             "Assign": {
               "statusMapIter": "{% $states.result.Payload.status %}",
               "reportIdMapIter": "{% $states.result.Payload.reportId %}",
               "informaticsjobIdMapIter": "{% $states.result.Payload.informaticsjobId %}"
             }
+          },
+          "Status is Succeeded": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Next": "Generate Output Data Payload",
+                "Condition": "{% $statusMapIter = 'SUCCEEDED' %}"
+              }
+            ],
+            "Default": "Generate WRU object"
+          },
+          "Generate Output Data Payload": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Arguments": {
+              "FunctionName": "${__generate_output_data_payload_lambda_function_arn__}",
+              "Payload": {
+                "reportId": "{% $reportIdMapIter %}",
+                "jobId": "{% $informaticsjobIdMapIter %}",
+                "caseId": "{% $engineParametersMapIter.caseId %}",
+                "caseAccessionNumber": "{% $inputsMapIter.caseMetadata.caseAccessionNumber %}",
+                "sampleName": "{% $tagsMapIter.libraryId %}"
+              }
+            },
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException",
+                  "Lambda.TooManyRequestsException"
+                ],
+                "IntervalSeconds": 1,
+                "MaxAttempts": 3,
+                "BackoffRate": 2,
+                "JitterStrategy": "FULL"
+              }
+            ],
+            "Next": "Generate WRU object",
+            "Assign": {
+              "outputsMapIter": "{% $states.result.Payload %}"
+            },
+            "Output": {}
           },
           "Generate WRU object": {
             "Type": "Task",
@@ -141,7 +186,7 @@
               "FunctionName": "${__generate_wru_event_object_with_merged_data_lambda_function_arn__}",
               "Payload": {
                 "portalRunId": "{% $portalRunIdMapIter %}",
-                "payload": "{% (\n  $engineParameters := ([\n    $payloadMapIter.data.engineParameters,\n    {\n      \"informaticsJobId\": $informaticsjobIdMapIter,\n      \"reportId\": $reportIdMapIter\n    }\n  ] ~> $merge);\n  /* Transform engine parameters */\n  $payloadMapIter ~>\n  | $.data | {\"engineParameters\": $engineParameters} |\n) %}",
+                "payload": "{% (\n  $engineParameters := ([\n    $payloadMapIter.data.engineParameters,\n    {\n      \"informaticsJobId\": $informaticsjobIdMapIter,\n      \"reportId\": $reportIdMapIter\n    }\n  ] ~> $merge);\n  /* Transform engine parameters */\n  $payloadMapIter ~>\n  | $.data | {\"engineParameters\": $engineParameters} | ~>\n  /* Add outputs if not empty */\n  (\n    $outputsMapIter ? \n    | $.data | {\"outputs\": $outputsMapIter} | :\n    $\n  )\n) %}",
                 "status": "{% $statusMapIter %}"
               }
             },

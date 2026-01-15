@@ -77,33 +77,17 @@ def handler(event, context):
     """
 
     # Get inputs
-    inputs = event.get("inputs")
-    engine_parameters = event.get("engineParameters")
-    tags = event.get("tags")
-    report_status = event.get("reportStatus")
     case_id = event.get("caseId")
     job_id = event.get("jobId")
     case_accession_number = event.get("caseAccessionNumber")
     report_id = event.get("reportId")
     sample_name = event.get("sampleName")
+
+    # Get the base url
     pieriandx_base_url = get_base_url()
 
-    # Initial dict
-    return_dict = {
-        "dataPayload": {
-            "inputs": inputs,
-            "engineParameters": engine_parameters,
-            "tags": tags
-        }
-    }
-
-    # Return if the report generation is not complete yet
-    if not report_status in ["report_generation_complete", "complete"]:
-        # Return as id
-        return return_dict
-
     # Set the outputs
-    return_dict["dataPayload"]["outputs"] = {
+    return {
         "caseUrl": join_url_paths(
             strip_path_from_url(pieriandx_base_url),
             f"/cgw/order/viewOrderDetails/{case_id}"
@@ -121,9 +105,6 @@ def handler(event, context):
      f"/cgw/informatics/downloadJobOutputAnalysisFile?caseId={case_id}&jobId={job_id}&accessionNumber={case_accession_number}&fileName={sample_name}_BiomarkerReport.txt"
         ),
     }
-
-    return return_dict
-
 
 # DEV
 # if __name__ == "__main__":

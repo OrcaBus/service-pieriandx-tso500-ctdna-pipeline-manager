@@ -30,9 +30,9 @@ export type LambdaName =
   | 'generateCase'
   | 'generateSequencerrun'
   | 'generateInformaticsjob'
-  | 'generateOutputDataPayload'
   | 'uploadPieriandxSampleDataToS3'
   // Monitor Runs to WRSC events
+  | 'generateOutputDataPayload'
   | 'listActiveWorkflowRuns'
   | 'getInformaticsjobAndReportStatus';
 
@@ -61,9 +61,9 @@ export const lambdaNameList: LambdaName[] = [
   'generateCase',
   'generateSequencerrun',
   'generateInformaticsjob',
-  'generateOutputDataPayload',
   'uploadPieriandxSampleDataToS3',
   // Monitor Runs to WRSC events
+  'generateOutputDataPayload',
   'listActiveWorkflowRuns',
   'getInformaticsjobAndReportStatus',
 ];
