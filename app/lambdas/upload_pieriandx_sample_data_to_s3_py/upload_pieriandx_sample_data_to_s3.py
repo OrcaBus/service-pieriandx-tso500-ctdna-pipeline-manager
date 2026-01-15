@@ -85,14 +85,6 @@ def handler(event, context):
                         requests.get(presigned_url).text
                     )
 
-            # Hacky substitution to fix the incorrect header name in the MetricsOutput.tsv file
-            if output_path.name.endswith("MetricsOutput.tsv"):
-                with open(output_path, "r") as f:
-                    contents = f.read()
-                contents = contents.replace('[Run QC Metrics]', '[Run Metrics]')
-                with open(output_path, "w") as f:
-                    f.write(contents)
-
             # Upload to s3
             upload_file(dest_bucket, dest_key, output_path)
     else:
