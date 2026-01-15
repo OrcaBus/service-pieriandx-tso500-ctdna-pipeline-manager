@@ -1,4 +1,4 @@
-import { Dag, DagVersion, PanelName, ProjectInfo, ProjectName } from '../interfaces';
+import { Dag, DagVersion, PanelId, PanelName, ProjectInfo, ProjectName } from '../interfaces';
 
 export interface SsmParameterValues {
   // Payload defaults
@@ -18,7 +18,7 @@ export interface SsmParameterValues {
   defaultDagVersion: string;
 
   // Panel
-  panelIdByPanelName: Record<PanelName, string>;
+  panelIdByPanelName: Record<PanelName, PanelId>;
   defaultPanelName: PanelName;
 
   // Project Info configuration
