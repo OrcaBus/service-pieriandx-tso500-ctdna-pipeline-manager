@@ -46,8 +46,10 @@ export interface EventBridgeRuleObject {
   ruleObject: Rule;
 }
 
-export interface ScheduledEventBridgeRuleProps
-  extends Omit<EventBridgeRuleProps, 'eventBus' | 'eventPattern'> {
+export interface ScheduledEventBridgeRuleProps extends Omit<
+  EventBridgeRuleProps,
+  'eventBus' | 'eventPattern'
+> {
   scheduleDuration?: Duration;
 }
 
