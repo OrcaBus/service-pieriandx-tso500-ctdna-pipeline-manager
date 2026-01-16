@@ -186,7 +186,7 @@
               "FunctionName": "${__generate_wru_event_object_with_merged_data_lambda_function_arn__}",
               "Payload": {
                 "portalRunId": "{% $portalRunIdMapIter %}",
-                "payload": "{% (\n  $engineParameters := ([\n    $payloadMapIter.data.engineParameters,\n    {\n      \"informaticsJobId\": $informaticsjobIdMapIter,\n      \"reportId\": $reportIdMapIter\n    }\n  ] ~> $merge);\n  /* Transform engine parameters */\n  $payloadMapIter ~>\n  | $.data | {\"engineParameters\": $engineParameters} | ~>\n  /* Add outputs if not empty */\n  (\n    $outputsMapIter ? \n    | $.data | {\"outputs\": $outputsMapIter} | :\n    $\n  )\n) %}",
+                "payload": "{% (\n  $engineParameters := ([\n    $payloadMapIter.data.engineParameters,\n    {\n      \"informaticsJobId\": $informaticsjobIdMapIter,\n      \"reportId\": $reportIdMapIter\n    }\n  ] ~> $merge);\n  /* Transform engine parameters */\n  $payloadMapIter ~>\n  | $.data | {\"engineParameters\": $engineParameters} | ~>\n  /* Add outputs if not empty */\n  (\n    $outputsMapIter ? \n    | $.data | {\"outputs\": $outputsMapIter} | :\n     function(){$}\n  )\n) %}",
                 "status": "{% $statusMapIter %}"
               }
             },
