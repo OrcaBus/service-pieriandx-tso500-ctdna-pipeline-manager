@@ -70,7 +70,7 @@ def handler(event, context):
     library_obj = get_library_from_library_id(library_id)
 
     # Get the project set from the library object
-    project_id = library_obj.get('projectSet', {})[0]['projectId']
+    project_id = library_obj.get('projectSet', {})[-1]['projectId']
 
     # Get the info from the ssm parameter
     # Panel, sampleType, isIdentified, defaultSnomedDiseaseCode
