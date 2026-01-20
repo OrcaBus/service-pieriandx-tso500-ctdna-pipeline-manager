@@ -101,7 +101,7 @@
               "payloadMapIter": "{% $states.result.Payload.payload %}",
               "engineParametersMapIter": "{% $states.result.Payload.payload.data.engineParameters %}",
               "inputsMapIter": "{% $states.result.Payload.payload.data.inputs %}",
-              "tagsMapIter": "{% $states.result.Payload.payload.tags %}"
+              "tagsMapIter": "{% $states.result.Payload.payload.data.tags %}"
             }
           },
           "Determine current pieriandx status": {
