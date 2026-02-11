@@ -89,7 +89,7 @@ def handler(event, context) -> Dict:
     library_obj: Library = get_library_from_library_id(library_id)
     external_sample_id = library_obj['sample']['externalSampleId']
     external_subject_id = library_obj['subject']['subjectId']
-    project_id = library_obj['projectSet'][0]['projectId']
+    project_id = library_obj['projectSet'][-1]['projectId']
 
     # Get the sample type from the event
     sample_type = event.get("sampleType")
