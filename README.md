@@ -1,364 +1,189 @@
-Template Service
+Service PierianDx TSO500 ctDNA Pipeline Manager
 ================================================================================
 
 - [Template Service](#template-service)
-  - [Service Description](#service-description)
-    - [Name \& responsibility](#name--responsibility)
-    - [Description](#description)
-    - [API Endpoints](#api-endpoints)
-    - [Consumed Events](#consumed-events)
-    - [Published Events](#published-events)
-    - [(Internal) Data states \& persistence model](#internal-data-states--persistence-model)
-    - [Major Business Rules](#major-business-rules)
-    - [Permissions \& Access Control](#permissions--access-control)
-    - [Change Management](#change-management)
-      - [Versioning strategy](#versioning-strategy)
-      - [Release management](#release-management)
-  - [Infrastructure \& Deployment](#infrastructure--deployment)
-    - [Stateful](#stateful)
-    - [Stateless](#stateless)
-    - [CDK Commands](#cdk-commands)
-    - [Stacks](#stacks)
-  - [Development](#development)
-    - [Project Structure](#project-structure)
-    - [Setup](#setup)
-      - [Requirements](#requirements)
-      - [Install Dependencies](#install-dependencies)
-      - [First Steps](#first-steps)
-    - [Conventions](#conventions)
-    - [Linting \& Formatting](#linting--formatting)
-    - [Testing](#testing)
-  - [Glossary \& References](#glossary--references)
+    - [Service Description](#service-description)
+        - [Name \& responsibility](#name--responsibility)
+        - [Description](#description)
+        - [API Endpoints](#api-endpoints)
+        - [Consumed Events](#consumed-events)
+        - [Published Events](#published-events)
+        - [(Internal) Data states \& persistence model](#internal-data-states--persistence-model)
+        - [Major Business Rules](#major-business-rules)
+        - [Permissions \& Access Control](#permissions--access-control)
+        - [Change Management](#change-management)
+            - [Versioning strategy](#versioning-strategy)
+            - [Release management](#release-management)
+    - [Infrastructure \& Deployment](#infrastructure--deployment)
+        - [Stateful](#stateful)
+        - [Stateless](#stateless)
+        - [CDK Commands](#cdk-commands)
+        - [Stacks](#stacks)
+    - [Development](#development)
+        - [Project Structure](#project-structure)
+        - [Setup](#setup)
+            - [Requirements](#requirements)
+            - [Install Dependencies](#install-dependencies)
+            - [First Steps](#first-steps)
+        - [Conventions](#conventions)
+        - [Linting \& Formatting](#linting--formatting)
+        - [Testing](#testing)
+    - [Glossary \& References](#glossary--references)
 
-
-Service Description
+Description
 --------------------------------------------------------------------------------
 
-### Name & responsibility
+### Summary
 
-### Description
+This is the PierianDx TSO500 ctDNA Pipeline Management service, responsible for managing submissions and tracking
+analyses of
+TSO500 to Velsera's (formerly PierianDx) [Clinical Genomics Workspace](https://app.pieriandx.com/cgw/).
+
+While the service uses the [Workflow Manager](https://github.com/OrcaBus/service-workflow-manager) to record and receive
+state changes,
+and uses the similar DRAFT - READY - RUNNING - COMPLETED state model for workflow runs,
+we do not use an abstracted orchestration service (such as the ICAv2 WES manager) to run the workflow,
+as the CGW API already provides a high level of abstraction and management for running analyses.
+Instead, this service directly interacts with the CGW API to manage cases and runs.
+
+For each submission, the service will
+
+* Pull necessary metadata and files from other services (e.g. Metadata Service, File Manager, RedCap)
+* Upload data to Velsera's S3 bucket
+* Create a case, sequencing run object and informatics job in the CGW via their API
+* Track the status of the case and update the system accordingly
+* Provide links to the CGW case report and vcf in the outputs.
+
+### Ready Event Creation
+
+![events-overview](/docs/drawio-exports/draft-to-ready.drawio.svg)
+
+### Ready to CGW Case + Job Creation
+
+![ready-to-case](/docs/drawio-exports/ready-to-pieriandx-case-creation.svg)
 
 ### API Endpoints
 
 This service provides a RESTful API following OpenAPI conventions.
 The Swagger documentation of the production endpoint is available here:
 
-
 ### Consumed Events
 
-| Name / DetailType | Source         | Schema Link       | Description         |
-|-------------------|----------------|-------------------|---------------------|
-| `SomeServiceStateChange` | `orcabus.someservice` | <schema link> | Announces service state changes |
+| Name / DetailType        | Source                    | Schema Link                                                                                                 | Description                                                      |
+|--------------------------|---------------------------|-------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
+| `WorkflowRunStateChange` | `orcabus.workflowmanager` | [WorkflowRunStateChange](https://github.com/OrcaBus/wiki/tree/main/orcabus-platform#workflowrunstatechange) | Source of updates on WorkflowRuns (expected pipeline executions) |
 
 ### Published Events
 
-| Name / DetailType | Source         | Schema Link       | Description         |
-|-------------------|----------------|-------------------|---------------------|
-| `TemplateStateChange` | `orcabus.templatemanager` | <schema link> | Announces Template data state changes |
+| Name / DetailType     | Source                         | Schema Link   | Description                           |
+|-----------------------|--------------------------------|---------------|---------------------------------------|
+| `WorkflowRunUpdate` | `orcabus.pieriandxtso500ctdna` | [WorkflowRunUpdate](https://github.com/OrcaBus/wiki/blob/main/orcabus/platform/events.md#workflowrunupdate) | Reporting any updates to the pipeline state |
 
+### Draft Event
 
-### (Internal) Data states & persistence model
+A workflow run must be placed into a DRAFT state before it can be started.
 
-### Major Business Rules
+A workflow run must be placed into a DRAFT state before it can be started.
 
-### Permissions & Access Control
+This is to ensure that only valid workflow runs are started, and that all required data is present.
 
-### Change Management
+This service is responsible for both populating and validating draft workflow runs.
 
-#### Versioning strategy
+A draft event may even be submitted without a payload.
 
-E.g. Manual tagging of git commits following Semantic Versioning (semver) guidelines.
+#### Draft Event Submission
 
-#### Release management
+To submit a PierianDx TSO500 ctDNA DRAFT event, please follow the [PM.PTC.1 SOP](/docs/operation/SOP/README.md#PM.PTC.1) in our SOPs documentation.
 
-The service employs a fully automated CI/CD pipeline that automatically builds and releases all changes to the `main` code branch.
+#### Draft Data Schema Validation
 
+We have generated JSON schemas for the complete DRAFT WRU event **data** which you can find in the [`app/schemas/` directory](/app/schemas).
 
-### Running the pipeline
+You can interactively check if your DRAFT event data payload matches the schema using the following links:
 
-### Ready event example
+- [Complete DRAFT WRU Event Data Schema Page](https://www.jsonschemavalidator.net/s/4mjkB0UT)
 
-### Draft event example
+### Release management
 
-#### Making your own draft events with BASH / JQ (dev)
+The service employs a fully automated CI/CD pipeline that
+automatically builds and releases all changes to the `main` code branch.
 
-There may be circumstances where you wish to generate WRSC events manually, the below is a quick solution for
-generating a draft for a somatic oncoanalyser wgts dna workflow. Omit setting the TUMOR_LIBRARY_ID variable for running a germline
-only workflow.
+### Related Services & Pipelines
 
-The draft populator step function will also pull necessary fastq files out of archive.
+#### Upstream Pipelines
 
-<details>
+- [Analysis Glue](https://github.com/OrcaBus/service-analysis-glue)
+- [Dragen TSO500 ctDNA Pipeline Manager](https://github.com/OrcaBus/service-dragen-tso500-ctdna-pipeline-manager)
 
-<summary>Click to expand</summary>
+#### Primary Services
 
-```shell
-# Globals
-EVENT_BUS_NAME="OrcaBusMain"
-DETAIL_TYPE="WorkflowRunUpdate"
-SOURCE="orcabus.manual"
+- [Workflow Manager](https://github.com/OrcaBus/service-workflow-manager)
 
-WORKFLOW_NAME="pieriandx-tso500-ctdna"
-WORKFLOW_VERSION="2.1.0"  # Name of the panel were currently using
-CODE_VERSION="AAAAAAA"  # Placeholder for now
+#### External Services
 
-PAYLOAD_VERSION="2025.09.25"
-
-# Glocals
-TSO500_CTDNA_LIBRARY_ID="L2500384"
-
-# Functions
-get_hostname_from_ssm(){
-  aws ssm get-parameter \
-    --name "/hosted_zone/umccr/name" \
-    --output json | \
-  jq --raw-output \
-    '.Parameter.Value'
-}
-
-get_orcabus_token(){
-  aws secretsmanager get-secret-value \
-    --secret-id orcabus/token-service-jwt \
-    --output json \
-    --query SecretString | \
-  jq --raw-output \
-    'fromjson | .id_token'
-}
-
-get_pipeline_id_from_workflow_version(){
-  local workflow_version="$1"
-  aws ssm get-parameter \
-    --name "/orcabus/workflows/oncoanalyser-wgts-dna/pipeline-ids-by-workflow-version/${workflow_version}" \
-    --output json | \
-  jq --raw-output \
-    '.Parameter.Value'
-}
-
-get_library_obj_from_library_id(){
-  local library_id="$1"
-  curl --silent --fail --show-error --location \
-    --header "Authorization: Bearer $(get_orcabus_token)" \
-    --url "https://metadata.$(get_hostname_from_ssm)/api/v1/library?libraryId=${library_id}" | \
-  jq --raw-output \
-    '
-      .results[0] |
-      {
-        "libraryId": .libraryId,
-        "orcabusId": .orcabusId
-      }
-    '
-}
-
-generate_portal_run_id(){
-  echo "$(date -u +'%Y%m%d')$(openssl rand -hex 4)"
-}
-
-get_linked_libraries(){
-  local library_id="$1"
-
-  jq --null-input --compact-output --raw-output \
-    --argjson libraryObj "$(get_library_obj_from_library_id "${library_id}")" \
-    '
-      [
-          $libraryObj
-      ]
-    '
-}
-
-get_workflow(){
-  local workflow_name="$1"
-  local workflow_version="$2"
-  local execution_engine="$3"
-  local execution_engine_pipeline_id="$4"
-  local code_version="$5"
-  curl --silent --fail --show-error --location \
-    --request GET \
-    --get \
-    --header "Authorization: Bearer $(get_orcabus_token)" \
-    --url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflow" \
-    --data "$( \
-      jq \
-       --null-input --compact-output --raw-output \
-       --arg workflowName "$workflow_name" \
-       --arg workflowVersion "$workflow_version" \
-       --arg codeVersion "$code_version" \
-       '
-         {
-            "name": $workflowName,
-            "version": $workflowVersion,
-            "codeVersion": $codeVersion
-         } |
-         to_entries |
-         map(
-           "\(.key)=\(.value)"
-         ) |
-         join("&")
-       ' \
-    )" | \
-  jq --compact-output --raw-output \
-    '
-      .results[0]
-    '
-}
-
-# Generate the event
-event_cli_json="$( \
-  jq --null-input --raw-output \
-    --arg eventBusName "$EVENT_BUS_NAME" \
-    --arg detailType "$DETAIL_TYPE" \
-    --arg source "$SOURCE" \
-    --argjson workflow "$(get_workflow \
-      "${WORKFLOW_NAME}" "${WORKFLOW_VERSION}" \
-      "${EXECUTION_ENGINE}" "$(get_pipeline_id_from_workflow_version "${WORKFLOW_VERSION}")" \
-      "${CODE_VERSION}"
-    )" \
-    --arg payloadVersion "$PAYLOAD_VERSION" \
-    --arg portalRunId "$(generate_portal_run_id)" \
-    --argjson libraries "$(get_linked_libraries "${TSO500_CTDNA_LIBRARY_ID}")" \
-    '
-      {
-        # Standard fields for the event
-        "EventBusName": $eventBusName,
-        "DetailType": $detailType,
-        "Source": $source,
-        # Detail must be a JSON object in string format
-        "Detail": (
-          {
-            "status": "DRAFT",
-            "timestamp": (now | todateiso8601),
-            "workflow": $workflow,
-            "workflowRunName": ("umccr--automated--" + $workflow["name"] + "--" + ($workflow["version"] | gsub("\\."; "-")) + "--" + $portalRunId),
-            "portalRunId": $portalRunId,
-            "libraries": $libraries
-          } |
-          tojson
-        )
-      } |
-      # Now wrap into an "entry" for the CLI
-      {
-        "Entries": [
-          .
-        ]
-      }
-    ' \
-)"
-
-aws events put-events --no-cli-pager --cli-input-json "${event_cli_json}"
-```
-
-</details>
-
-
-tags:
-  * tumorDnaLibraryId:
-  * normalDnaLibraryId:
-  * tumorRnaLibraryId:
-  * subjectId:
-  * individualId:
-  * fastqRgidList: []
-
-
-inputs:
-* processesList:
-  * lilac
-  * neo
-  * cuppa
-  * orange
-* genome: "GRCh38_umccr"
-* genomeVersion: "GRCh38"
-* genomeType: "alt"
-* forceGenome: true
-* refDataHmfDataPath: "s3://hmf-data/GRCh38_umccr"
-* genomes
-  * GRCh38_umccr:
-    * fasta
-    * fai
-    * dict
-    * img
-    * bwamem2Index
-    * gridssIndex
-    * starIndex
-* tumorDnaInputs:
-  * bamRedux
-  * reduxJitterTsv
-  * reduxMsTsv
-  * bamtoolsDir
-  * sageDir
-  * linxAnnoDir
-  * linxPlotDir
-  * purpleDir
-  * virusinterpreterDir
-  * chordDir
-  * sigsDir
-* normalDnaInputs:
-  * bamRedux
-  * reduxJitterTsv
-  * reduxMsTsv
-  * bamtoolsDir
-  * sageDir
-  * linxAnnoDir
-* tumorRnaInputs:
-  * bam
-  * isofoxDir
-
+- [RedCap APIs](https://github.com/umccr/redcap-apis)
 
 Infrastructure & Deployment
 --------------------------------------------------------------------------------
 
-Short description with diagrams where appropriate.
-Deployment settings / configuration (e.g. CodePipeline(s) / automated builds).
+> Deployment settings / configuration (e.g. CodePipeline(s) / automated builds).
 
-Infrastructure and deployment are managed via CDK. This template provides two types of CDK entry points: `cdk-stateless` and `cdk-stateful`.
-
-
-### Stateful
-
-- Queues
-- Buckets
-- Database
-- ...
-
-### Stateless
-- Lambdas
-- StepFunctions
-
+Infrastructure and deployment are managed via CDK. This template provides two types of CDK entry points: `cdk-stateless`
+and `cdk-stateful`.
 
 ### CDK Commands
 
 You can access CDK commands using the `pnpm` wrapper script.
 
-- **`cdk-stateless`**: Used to deploy stacks containing stateless resources (e.g., AWS Lambda), which can be easily redeployed without side effects.
-- **`cdk-stateful`**: Used to deploy stacks containing stateful resources (e.g., AWS DynamoDB, AWS RDS), where redeployment may not be ideal due to potential side effects.
+- **`cdk-stateless`**: Used to deploy stacks containing stateless resources (e.g., AWS Lambda), which can be easily
+  redeployed without side effects.
+- **`cdk-stateful`**: Used to deploy stacks containing stateful resources (e.g., AWS DynamoDB, AWS RDS), where
+  redeployment may not be ideal due to potential side effects.
 
-The type of stack to deploy is determined by the context set in the `./bin/deploy.ts` file. This ensures the correct stack is executed based on the provided context.
+The type of stack to deploy is determined by the context set in the `./bin/deploy.ts` file. This ensures the correct
+stack is executed based on the provided context.
 
-For example:
+### Stateful Stack
+
+The stateful stack for this service includes the following resources
+
+- S3 Snomed Lookup bucket
+- Jobs DynamoDb table
+- Event Schema
+
+To list all available stateful stacks, run:
 
 ```sh
-# Deploy a stateless stack
-pnpm cdk-stateless <command>
-
-# Deploy a stateful stack
-pnpm cdk-stateful <command>
+pnpm cdk-stateful ls
 ```
 
-### Stacks
+Output:
 
-This CDK project manages multiple stacks. The root stack (the only one that does not include `DeploymentPipeline` in its stack ID) is deployed in the toolchain account and sets up a CodePipeline for cross-environment deployments to `beta`, `gamma`, and `prod`.
-
-To list all available stacks, run:
-
-```sh
-pnpm cdk-stateless ls
+```shell
+OrcaBusStatefulPdxServiceStack
+OrcaBusStatefulPdxServiceStack/PdxManagerStatefulDeploymentPipeline/OrcaBusBeta/OrcaBusStatefulPdxServiceStack (OrcaBusBeta-OrcaBusStatefulPdxServiceStack)
+OrcaBusStatefulPdxServiceStack/PdxManagerStatefulDeploymentPipeline/OrcaBusGamma/OrcaBusStatefulPdxServiceStack (OrcaBusGamma-OrcaBusStatefulPdxServiceStack)
+OrcaBusStatefulPdxServiceStack/PdxManagerStatefulDeploymentPipeline/OrcaBusProd/OrcaBusStatefulPdxServiceStack (OrcaBusProd-OrcaBusStatefulPdxServiceStack)
 ```
 
-Example output:
+### Stateless Stack
 
-```sh
-OrcaBusStatelessServiceStack
-OrcaBusStatelessServiceStack/DeploymentPipeline/OrcaBusBeta/DeployStack (OrcaBusBeta-DeployStack)
-OrcaBusStatelessServiceStack/DeploymentPipeline/OrcaBusGamma/DeployStack (OrcaBusGamma-DeployStack)
-OrcaBusStatelessServiceStack/DeploymentPipeline/OrcaBusProd/DeployStack (OrcaBusProd-DeployStack)
+The stateful stack for this service includes the following resources
+
+- Lambdas
+- StepFunctions
+- Event Rules
+- Event Targets
+
+To list all available stateful stacks, run:
+
+Output:
+
+```shell
+OrcaBusStatelessPdxServiceStack
+OrcaBusStatelessPdxServiceStack/PdxManagerStatelessDeploymentPipeline/OrcaBusBeta/OrcaBusStatelessPdxServiceStack (OrcaBusBeta-OrcaBusStatelessPdxServiceStack)
+OrcaBusStatelessPdxServiceStack/PdxManagerStatelessDeploymentPipeline/OrcaBusGamma/OrcaBusStatelessPdxServiceStack (OrcaBusGamma-OrcaBusStatelessPdxServiceStack)
+OrcaBusStatelessPdxServiceStack/PdxManagerStatelessDeploymentPipeline/OrcaBusProd/OrcaBusStatelessPdxServiceStack (OrcaBusProd-OrcaBusStatelessPdxServiceStack)
 ```
 
 
@@ -371,20 +196,27 @@ The root of the project is an AWS CDK project where the main application logic l
 
 The project is organized into the following key directories:
 
-- **`./app`**: Contains the main application logic. You can open the code editor directly in this folder, and the application should run independently.
+- **`./app`**: Contains the main application logic. You can open the code editor directly in this folder, and the
+  application should run independently.
 
-- **`./bin/deploy.ts`**: Serves as the entry point of the application. It initializes two root stacks: `stateless` and `stateful`. You can remove one of these if your service does not require it.
+- **`./bin/deploy.ts`**: Serves as the entry point of the application. It initializes two root stacks: `stateless` and
+  `stateful`. You can remove one of these if your service does not require it.
 
 - **`./infrastructure`**: Contains the infrastructure code for the project:
-  - **`./infrastructure/toolchain`**: Includes stacks for the stateless and stateful resources deployed in the toolchain account. These stacks primarily set up the CodePipeline for cross-environment deployments.
-  - **`./infrastructure/stage`**: Defines the stage stacks for different environments:
-    - **`./infrastructure/stage/config.ts`**: Contains environment-specific configuration files (e.g., `beta`, `gamma`, `prod`).
-    - **`./infrastructure/stage/stack.ts`**: The CDK stack entry point for provisioning resources required by the application in `./app`.
+    - **`./infrastructure/toolchain`**: Includes stacks for the stateless and stateful resources deployed in the
+      toolchain account. These stacks primarily set up the CodePipeline for cross-environment deployments.
+    - **`./infrastructure/stage`**: Defines the stage stacks for different environments:
+        - **`./infrastructure/stage/config.ts`**: Contains environment-specific configuration files (e.g., `beta`,
+          `gamma`, `prod`).
+        - **`./infrastructure/stage/stack.ts`**: The CDK stack entry point for provisioning resources required by the
+          application in `./app`.
 
-- **`.github/workflows/pr-tests.yml`**: Configures GitHub Actions to run tests for `make check` (linting and code style), tests defined in `./test`, and `make test` for the `./app` directory. Modify this file as needed to ensure the tests are properly configured for your environment.
+- **`.github/workflows/pr-tests.yml`**: Configures GitHub Actions to run tests for `make check` (linting and code
+  style), tests defined in `./test`, and `make test` for the `./app` directory. Modify this file as needed to ensure the
+  tests are properly configured for your environment.
 
-- **`./test`**: Contains tests for CDK code compliance against `cdk-nag`. You should modify these test files to match the resources defined in the `./infrastructure` folder.
-
+- **`./test`**: Contains tests for CDK code compliance against `cdk-nag`. You should modify these test files to match
+  the resources defined in the `./infrastructure` folder.
 
 ### Setup
 
@@ -410,19 +242,23 @@ To install all required dependencies, run:
 make install
 ```
 
-#### First Steps
+#### Update Dependencies
 
-Before using this template, search for all instances of `TODO:` comments in the codebase and update them as appropriate for your service. This includes replacing placeholder values (such as stack names).
+To update dependencies, run:
 
+```sh
+pnpm update
+```
 
 ### Conventions
 
 ### Linting & Formatting
 
-Automated checks are enforces via pre-commit hooks, ensuring only checked code is committed. For details consult the `.pre-commit-config.yaml` file.
+Automated checks are enforces via pre-commit hooks, ensuring only checked code is committed. For details consult the
+`.pre-commit-config.yaml` file.
 
-Manual, on-demand checking is also available via `make` targets (see below). For details consult the `Makefile` in the root of the project.
-
+Manual, on-demand checking is also available via `make` targets (see below). For details consult the `Makefile` in the
+root of the project.
 
 To run linting and formatting checks on the root project, use:
 
@@ -438,8 +274,8 @@ make fix
 
 ### Testing
 
-
-Unit tests are available for most of the business logic. Test code is hosted alongside business in `/tests/` directories.
+Unit tests are available for most of the business logic. Test code is hosted alongside business in `/tests/`
+directories.
 
 ```sh
 make test
@@ -448,11 +284,5 @@ make test
 Glossary & References
 --------------------------------------------------------------------------------
 
-For general terms and expressions used across OrcaBus services, please see the platform [documentation](https://github.com/OrcaBus/wiki/blob/main/orcabus-platform/README.md#glossary--references).
-
-Service specific terms:
-
-| Term      | Description                                      |
-|-----------|--------------------------------------------------|
-| Foo | ... |
-| Bar | ... |
+For general terms and expressions used across OrcaBus services, please see the
+platform [documentation](https://github.com/OrcaBus/wiki/blob/main/orcabus-platform/README.md#glossary--references).
