@@ -60,6 +60,7 @@ export const S3_SEQUENCERRUN_ROOT: Record<StageName, string> = {
 };
 
 /* S3 Constants */
+// Contains the snomed and disease maps
 export const S3_PIERIANDX_LOOKUP_BUCKET: Record<StageName, string> = {
   BETA: `pdx-lookup-bucket-${ACCOUNT_ID_ALIAS.BETA}-${REGION}`,
   GAMMA: `pdx-lookup-bucket-${ACCOUNT_ID_ALIAS.GAMMA}-${REGION}`,
