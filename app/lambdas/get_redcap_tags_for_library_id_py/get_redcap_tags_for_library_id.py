@@ -70,7 +70,12 @@ def handler(event, context):
     library_obj = get_library_from_library_id(library_id)
 
     # Get the project set from the library object
-    project_id = library_obj.get('projectSet', {})[0]['projectId']
+    project_set = library_obj.get('projectSet', [])
+    if not project_set:
+        raise ValueError(f"No projectSet found for library id {library_id}")
+
+    # Get the last project connected from the project set
+    project_id = project_set[-1]['projectId']
 
     # Get the info from the ssm parameter
     # Panel, sampleType, isIdentified, defaultSnomedDiseaseCode
