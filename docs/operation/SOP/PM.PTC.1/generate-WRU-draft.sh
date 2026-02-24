@@ -10,7 +10,7 @@ LAMBDA_FUNCTION_NAME="WruDraftValidator"
 FORCE=false  # Use --force to set to true
 
 # Workflow constants
-WORKFLOW_NAME="pieriandx-tso500-ctdna"
+WORKFLOW_NAME="pieriandx-tso500"
 WORKFLOW_VERSION="2.6.0"
 PAYLOAD_VERSION="2025.09.25"
 
@@ -26,13 +26,8 @@ print_usage(){
   echo "
 generate-WRU-draft.sh [-h | --help]
 generate-WRU-draft.sh (library_id)...
-                      [-f | --force]
-                      [-o | --output-uri-prefix <s3_uri>]
-                      [-l | --logs-uri-prefix <s3_uri>]
-                      [-p | --project-id <project_id>]
-                      [--workflow-version <workflow_version>]
-                      [--code-version <code_version>]
-                      [--disable-sv-calling]
+                  [-f | --force]
+                  [--workflow-version <workflow_version>]
 
 Description:
 Run this script to generate a draft WorkflowRunUpdate event for the specified library IDs.
@@ -119,20 +114,20 @@ get_workflow(){
     --url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflow" \
     --data "$( \
       jq \
-       --null-input --compact-output --raw-output \
-       --arg workflowName "$workflow_name" \
-       --arg workflowVersion "$workflow_version" \
-       '
-         {
+        --null-input --compact-output --raw-output \
+        --arg workflowName "$workflow_name" \
+        --arg workflowVersion "$workflow_version" \
+        '
+          {
             "name": $workflowName,
             "version": $workflowVersion,
-         } |
-         to_entries |
-         map(
-           "\(.key)=\(.value)"
-         ) |
-         join("&")
-       ' \
+          } |
+          to_entries |
+          map(
+            "\(.key)=\(.value)"
+          ) |
+          join("&")
+        ' \
     )" | \
   jq --compact-output --raw-output \
     '
@@ -151,42 +146,49 @@ get_workflow_run(){
   jq --compact-output --raw-output \
     '
       if (.results | length) > 0 then
-		.results[0]
-	  else
-		empty
-	  end
+        .results[0]
+      else
+        empty
+      end
     '
 }
 
 # Get args
 while [[ $# -gt 0 ]]; do
   case "$1" in
-  	# Help
+    # Help
     -h|--help)
       print_usage
       exit 0
       ;;
-  	# Force boolean
+    # Force boolean
     -f|--force)
       FORCE=true
       shift
       ;;
-	# Workflow version
-	--workflow-version)
-	  WORKFLOW_VERSION="$2"
-	  shift 2
-	  ;;
-	--workflow-version=*)
-	  WORKFLOW_VERSION="${1#*=}"
-	  shift
-	  ;;
-	# Positional arguments (library IDs)
+    # Workflow version
+    --workflow-version)
+      WORKFLOW_VERSION="$2"
+      shift 2
+      ;;
+    --workflow-version=*)
+      WORKFLOW_VERSION="${1#*=}"
+      shift
+      ;;
+    # Positional arguments (library IDs)
     *)
       LIBRARY_ID_ARRAY+=("$1")
       shift
       ;;
   esac
 done
+
+# Ensure at least one library ID was provided
+if [ ${#LIBRARY_ID_ARRAY[@]} -eq 0 ]; then
+  echo_stderr "Error: At least one library ID must be provided."
+  print_usage
+  exit 1
+fi
 
 # Generate the portal run id
 portal_run_id="$(generate_portal_run_id)"
@@ -207,27 +209,27 @@ lambda_payload="$( \
     --arg portalRunId "${portal_run_id}" \
     --argjson libraries "$(get_linked_libraries)" \
     '
-	  {
-		"status": "DRAFT",
-		"timestamp": (now | todateiso8601),
-		"workflow": $workflow,
-		"workflowRunName": ("umccr--manual--" + $workflow["name"] + "--" + ($workflow["version"] | gsub("\\."; "-")) + "--" + $portalRunId),
-		"portalRunId": $portalRunId,
-		"libraries": $libraries,
-	  }
+      {
+        "status": "DRAFT",
+        "timestamp": (now | todateiso8601),
+        "workflow": $workflow,
+        "workflowRunName": ("umccr--manual--" + $workflow["name"] + "--" + ($workflow["version"] | gsub("\\."; "-")) + "--" + $portalRunId),
+        "portalRunId": $portalRunId,
+        "libraries": $libraries
+      }
     ' \
 )"
 
 # Confirm before pushing the event
 if [[ "${FORCE}" == "false" ]]; then
-    echo_stderr "Send the following payload to the lambda object:"
-    jq --raw-output <<< "${lambda_payload}" 1>&2
+  echo_stderr "Send the following payload to the lambda object:"
+  jq --raw-output <<< "${lambda_payload}" 1>&2
 
-    read -r -p 'Confirm to push this event to EventBridge? (y/n): ' confirm_push
-    if [[ ! "${confirm_push}" =~ ^[Yy]$ ]]; then
-      echo_stderr "Aborting event push."
-      exit 1
-    fi
+  read -r -p 'Confirm to push this event to EventBridge? (y/n): ' confirm_push
+  if [[ ! "${confirm_push}" =~ ^[Yy]$ ]]; then
+    echo_stderr "Aborting event push."
+    exit 1
+  fi
 fi
 
 # Push the event to EventBridge
@@ -244,10 +246,10 @@ aws lambda invoke \
 jq --raw-output \
   '
     if .statusCode != 200 then
-	  .body | fromjson
-	else
-	  empty
-	end
+      .body | fromjson
+    else
+      empty
+    end
   ' \
   < lambda_data_pipe \
   > "${errors_json}" & \
@@ -267,17 +269,17 @@ echo_stderr "Waiting for the workflow run to be registered by the workflow manag
 
 while :; do
   workflow_run_object="$( \
-  	get_workflow_run "${portal_run_id}"
+    get_workflow_run "${portal_run_id}"
   )"
 
   # Check with the workflow manager for the workflow run object
   if [[ -n "${workflow_run_object}" ]]; then
     workflow_run_orcabus_id="$(jq --raw-output '.orcabusId' <<< "${workflow_run_object}")"
-	echo_stderr "Workflow run registered with ID: ${workflow_run_orcabus_id}"
-	break
+    echo_stderr "Workflow run registered with ID: ${workflow_run_orcabus_id}"
+    break
   else
-	echo_stderr "Workflow run not yet registered, waiting 10 seconds..."
-	sleep 10
+    echo_stderr "Workflow run not yet registered, waiting 10 seconds..."
+    sleep 10
   fi
 
 done

@@ -1,36 +1,37 @@
-Service PierianDx TSO500 ctDNA Pipeline Manager
+PierianDx TSO500 ctDNA Pipeline Manager
 ================================================================================
 
-- [Template Service](#template-service)
-    - [Service Description](#service-description)
-        - [Name \& responsibility](#name--responsibility)
-        - [Description](#description)
-        - [API Endpoints](#api-endpoints)
-        - [Consumed Events](#consumed-events)
-        - [Published Events](#published-events)
-        - [(Internal) Data states \& persistence model](#internal-data-states--persistence-model)
-        - [Major Business Rules](#major-business-rules)
-        - [Permissions \& Access Control](#permissions--access-control)
-        - [Change Management](#change-management)
-            - [Versioning strategy](#versioning-strategy)
-            - [Release management](#release-management)
-    - [Infrastructure \& Deployment](#infrastructure--deployment)
-        - [Stateful](#stateful)
-        - [Stateless](#stateless)
-        - [CDK Commands](#cdk-commands)
-        - [Stacks](#stacks)
-    - [Development](#development)
-        - [Project Structure](#project-structure)
-        - [Setup](#setup)
-            - [Requirements](#requirements)
-            - [Install Dependencies](#install-dependencies)
-            - [First Steps](#first-steps)
-        - [Conventions](#conventions)
-        - [Linting \& Formatting](#linting--formatting)
-        - [Testing](#testing)
-    - [Glossary \& References](#glossary--references)
+- [Service Description](#service-description)
+  - [Summary](#summary)
+  - [Ready Event Creation](#ready-event-creation)
+  - [Ready to CGW Case + Job Creation](#ready-to-cgw-case--job-creation)
+  - [API Endpoints](#api-endpoints)
+  - [Consumed Events](#consumed-events)
+  - [Published Events](#published-events)
+  - [Draft Event](#draft-event)
+    - [Draft Event Submission](#draft-event-submission)
+    - [Draft Data Schema Validation](#draft-data-schema-validation)
+  - [Release management](#release-management)
+  - [Related Services \& Pipelines](#related-services--pipelines)
+    - [Upstream Pipelines](#upstream-pipelines)
+    - [Primary Services](#primary-services)
+    - [External Services](#external-services)
+- [Infrastructure \& Deployment](#infrastructure--deployment)
+  - [CDK Commands](#cdk-commands)
+  - [Stateful Stack](#stateful-stack)
+  - [Stateless Stack](#stateless-stack)
+- [Development](#development)
+  - [Project Structure](#project-structure)
+  - [Setup](#setup)
+    - [Requirements](#requirements)
+    - [Install Dependencies](#install-dependencies)
+    - [Update Dependencies](#update-dependencies)
+  - [Conventions](#conventions)
+  - [Linting \& Formatting](#linting--formatting)
+  - [Testing](#testing)
+- [Glossary \& References](#glossary--references)
 
-Description
+Service Description
 --------------------------------------------------------------------------------
 
 ### Summary
@@ -80,8 +81,6 @@ The Swagger documentation of the production endpoint is available here:
 | `WorkflowRunUpdate` | `orcabus.pieriandxtso500ctdna` | [WorkflowRunUpdate](https://github.com/OrcaBus/wiki/blob/main/orcabus/platform/events.md#workflowrunupdate) | Reporting any updates to the pipeline state |
 
 ### Draft Event
-
-A workflow run must be placed into a DRAFT state before it can be started.
 
 A workflow run must be placed into a DRAFT state before it can be started.
 
