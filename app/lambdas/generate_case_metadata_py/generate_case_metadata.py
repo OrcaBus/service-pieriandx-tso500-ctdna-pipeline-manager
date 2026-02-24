@@ -89,7 +89,14 @@ def handler(event, context) -> Dict:
     library_obj: Library = get_library_from_library_id(library_id)
     external_sample_id = library_obj['sample']['externalSampleId']
     external_subject_id = library_obj['subject']['subjectId']
-    project_id = library_obj['projectSet'][-1]['projectId']
+
+    # Get the project set from the library object
+    project_set = library_obj.get('projectSet', [])
+    if not project_set:
+        raise ValueError(f"No projectSet found for library id {library_id}")
+
+    # Get the last project connected from the project set
+    project_id = project_set[-1]['projectId']
 
     # Get the sample type from the event
     sample_type = event.get("sampleType")
