@@ -11,7 +11,7 @@ export function buildPierianDxToolsLayer(scope: Construct): PythonLayerVersion {
     */
   return new PythonLayerVersion(scope, 'pieriandx-tools-layer', {
     entry: path.join(LAYERS_DIR, 'pieriandx_tools_layer'),
-    compatibleRuntimes: [lambda.Runtime.PYTHON_3_12],
+    compatibleRuntimes: [lambda.Runtime.PYTHON_3_14],
     compatibleArchitectures: [lambda.Architecture.ARM_64],
     bundling: {
       image: getPythonUvDockerImage(),
