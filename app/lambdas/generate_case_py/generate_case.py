@@ -78,7 +78,7 @@ def handler(event, context):
         response.raise_for_status()
     except HTTPError as e:
         logging.error(f"Failed to create case: {e}")
-        # raise Exception(f"Failed to create case: {e}")
+        raise Exception(f"Failed to create case: {e}")
 
     if response.status_code != 200:
         logging.error(f"Failed to create case: {response.json()}")

@@ -20,9 +20,7 @@ botocore = "^1.42.55"
 aws_requests_auth = "^0.4.3"
 v2_samplesheet_maker = "^4.2.4"
 pandas = "^2.3.3"
-# Git dependencies
-pyriandx = { git = "https://github.com/umccr/pyriandx.git", branch = "0.4.0" }
-setuptools = "^80.0.0"  # Cannot be higher than 80.0.0 due to reliance on pkg_resources for entry points
+pyriandx = "0.4.0"
 
 [tool.poetry.group.dev]
 optional = true

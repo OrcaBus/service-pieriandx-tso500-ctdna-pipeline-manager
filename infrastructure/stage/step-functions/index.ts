@@ -30,6 +30,7 @@ import {
 } from '../constants';
 import { Construct } from 'constructs';
 import { camelCaseToSnakeCase } from '../utils';
+import { getLambdaResourceLogicalArn } from '../lambda';
 
 function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps): {
   [key: string]: string;
@@ -46,7 +47,7 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
   for (const lambdaObject of lambdaFunctions) {
     const sfnSubtitutionKey = `__${camelCaseToSnakeCase(lambdaObject.lambdaName)}_lambda_function_arn__`;
     definitionSubstitutions[sfnSubtitutionKey] =
-      lambdaObject.lambdaFunction.currentVersion.functionArn;
+      lambdaObject.lambdaFunction.latestVersion.functionArn;
   }
 
   /* Common substitutions */
@@ -118,8 +119,25 @@ function wireUpStateMachinePermissions(props: WireUpPermissionsProps): void {
 
   /* Allow the state machine to invoke the lambda function */
   for (const lambdaObject of lambdaFunctions) {
-    lambdaObject.lambdaFunction.currentVersion.grantInvoke(props.sfnObject);
+    lambdaObject.lambdaFunction.grantInvoke(props.sfnObject);
   }
+  // Build appliesTo list: include the action plus Resource::... entries that reference the CFN logical ID tokens
+  NagSuppressions.addResourceSuppressions(
+    props.sfnObject,
+    [
+      {
+        id: 'AwsSolutions-IAM5',
+        reason: 'We need to give the state machine permissions to invoke the lambda functions',
+        appliesTo: [
+          'Action::lambda:InvokeFunction',
+          ...lambdaFunctions
+            .map((lambdaObject) => getLambdaResourceLogicalArn(lambdaObject.lambdaFunction))
+            .filter((logicalId) => logicalId !== null),
+        ],
+      },
+    ],
+    true
+  );
 
   // Needs Event put permissions
   if (sfnRequirements.needsEventPutPermission) {

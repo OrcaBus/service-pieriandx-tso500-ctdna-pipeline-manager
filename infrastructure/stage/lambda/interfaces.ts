@@ -75,6 +75,7 @@ export interface LambdaRequirements {
   needsRedcapLambdaPermission?: boolean;
   needsSsmParametersAccess?: boolean;
   needsSchemaRegistryAccess?: boolean;
+  needsExtendedTimeout?: boolean;
 }
 
 // Lambda requirements mapping
@@ -118,6 +119,7 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   generateCaseMetadata: {
     needsOrcabusApiTools: true,
     needsPieriandxLayerAccess: true,
+    needsExtendedTimeout: true,
   },
   getCaseMetadataFromRedcap: {
     needsRedcapLambdaPermission: true,
