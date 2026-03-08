@@ -28,8 +28,8 @@ function buildLambda(scope: Construct, props: BuildLambdaInput): LambdaObject {
     architecture: lambda.Architecture.ARM_64,
     index: lambdaNameToSnakeCase + '.py',
     handler: 'handler',
-    timeout: Duration.seconds(60),
-    memorySize: 2048,
+    timeout: lambdaRequirements.needsExtendedTimeout ? Duration.seconds(900) : Duration.seconds(60),
+    memorySize: 1024,
     includeOrcabusApiToolsLayer: lambdaRequirements.needsOrcabusApiTools,
   });
 
@@ -88,13 +88,13 @@ function buildLambda(scope: Construct, props: BuildLambdaInput): LambdaObject {
     lambdaFunction.addLayers(props.pieriandxLambdaLayer);
 
     // Give lambda permission to invoke the auth token lambda
-    props.authTokenLambdaFunction.grantInvoke(lambdaFunction.currentVersion);
+    props.authTokenLambdaFunction.grantInvoke(lambdaFunction);
 
     // Give lambda permission to read the S3 credentials secret
-    props.s3CredentialsSecret.grantRead(lambdaFunction.currentVersion);
+    props.s3CredentialsSecret.grantRead(lambdaFunction);
 
     // Give lambda permission to read the S3 lookup bucket
-    props.s3LookUpBucket.grantRead(lambdaFunction.currentVersion);
+    props.s3LookUpBucket.grantRead(lambdaFunction);
 
     // And add in all the required environment variables
     lambdaFunction.addEnvironment(
@@ -143,7 +143,7 @@ function buildLambda(scope: Construct, props: BuildLambdaInput): LambdaObject {
 
   if (lambdaRequirements.needsRedcapLambdaPermission) {
     // Give lambda permission to invoke the auth token lambda
-    props.redcapLambdaFunction.grantInvoke(lambdaFunction.currentVersion);
+    props.redcapLambdaFunction.grantInvoke(lambdaFunction);
     lambdaFunction.addEnvironment(
       'REDCAP_LAMBDA_FUNCTION_NAME',
       props.redcapLambdaFunction.functionName
@@ -225,4 +225,19 @@ export function buildAllLambdas(scope: Construct, props: BuildLambdasInput): Lam
   }
 
   return lambdaObjects;
+}
+
+export function getLambdaResourceLogicalArn(lambdaFunction: lambda.Function): string | null {
+  // Find L1 CloudFormation CfnFunction resource(s) under the L2 Function (exclude Alias/Version L1s)
+  const cfnFunctions = lambdaFunction.node
+    .findAll()
+    .filter((n) => n instanceof lambda.CfnFunction) as lambda.CfnFunction[];
+
+  // Use the first CfnFunction's logical ID
+  if (cfnFunctions.length > 0) {
+    const logicalId = cdk.Stack.of(lambdaFunction).getLogicalId(cfnFunctions[0]);
+    return `Resource::<${logicalId}.Arn>:*`;
+  }
+
+  return null;
 }

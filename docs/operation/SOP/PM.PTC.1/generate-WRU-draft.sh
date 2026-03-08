@@ -10,7 +10,7 @@ LAMBDA_FUNCTION_NAME="WruDraftValidator"
 FORCE=false  # Use --force to set to true
 
 # Workflow constants
-WORKFLOW_NAME="pieriandx-tso500"
+WORKFLOW_NAME="pieriandx-tso500-ctdna"
 WORKFLOW_VERSION="2.6.0"
 PAYLOAD_VERSION="2025.09.25"
 
