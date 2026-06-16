@@ -14,10 +14,11 @@ import {
   PIERIANDX_S3_CREDENTIALS_SECRET_NAME,
 } from './constants';
 import { buildPierianDxToolsLayer } from './layers';
+import { GitStack } from '@orcabus/platform-cdk-constructs/deployment-stack-pipeline';
 
 export type StatelessApplicationStackProps = cdk.StackProps & StatelessApplicationStackConfig;
 
-export class StatelessApplicationStack extends cdk.Stack {
+export class StatelessApplicationStack extends GitStack {
   constructor(scope: Construct, id: string, props: StatelessApplicationStackProps) {
     super(scope, id, props);
 
