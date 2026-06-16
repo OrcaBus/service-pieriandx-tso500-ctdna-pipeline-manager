@@ -27,7 +27,8 @@ export type ProjectName =
   | 'Control'
   | 'BatchControl'
   | 'QAP'
-  | 'iPredict2';
+  | 'iPredict2'
+  | 'ASPi2L';
 
 export interface ProjectInfo {
   panel: string;

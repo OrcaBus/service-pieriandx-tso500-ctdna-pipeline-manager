@@ -158,6 +158,12 @@ export const PROJECT_INFO_MAP: Record<ProjectName, ProjectInfo> = {
     isIdentified: true,
     defaultSnomedDiseaseCode: null,
   },
+  ASPi2L: {
+    panel: 'subpanel',
+    sampleType: 'patientcare',
+    isIdentified: true,
+    defaultSnomedDiseaseCode: 254637007,
+  },
 };
 
 export const PROJECT_INFO_DEFAULT: ProjectInfo = {
