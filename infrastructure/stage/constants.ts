@@ -1,6 +1,10 @@
 /* Imports */
 import path from 'path';
 import { DATA_SCHEMA_REGISTRY_NAME } from '@orcabus/platform-cdk-constructs/shared-config/event-bridge';
+import {
+  REFERENCE_DATA_BUCKET,
+  TEST_DATA_BUCKET,
+} from '@orcabus/platform-cdk-constructs/shared-config/s3';
 import { Dag, DagVersion, PanelId, PanelName, ProjectInfo, ProjectName } from './interfaces';
 import {
   ACCOUNT_ID_ALIAS,
@@ -22,6 +26,7 @@ export const WORKFLOW_NAME = 'pieriandx-tso500-ctdna';
 export const DEFAULT_PAYLOAD_VERSION = '2025.09.25';
 
 /* Event constants */
+export const EVENT_BUS_NAME = 'OrcaBusMain';
 export const EVENT_SOURCE = 'orcabus.pieriandxtso500ctdna';
 export const WORKFLOW_MANAGER_EVENT_SOURCE = 'orcabus.workflowmanager';
 export const DRAGEN_TSO500_CTDNA_WORKFLOW_NAME = 'dragen-tso500-ctdna';
@@ -266,6 +271,10 @@ export const SSM_PARAMETER_PATH_S3_DISEASE_TREE = path.join(
 export const SCHEMA_REGISTRY_NAME = DATA_SCHEMA_REGISTRY_NAME;
 export const SSM_SCHEMA_ROOT = path.join(SSM_PARAMETER_PATH_PREFIX, 'schemas');
 
+/* Bucket constants */
+export const TEST_DATA_BUCKET_NAME = TEST_DATA_BUCKET;
+export const REFERENCE_DATA_BUCKET_NAME = REFERENCE_DATA_BUCKET;
+
 /* Redcap paths */
 export const REDCAP_LAMBDA_FUNCTION_NAME: Record<StageName, string> = {
   BETA: 'redcap-apis-dev-lambda-function',
@@ -276,13 +285,6 @@ export const REDCAP_LAMBDA_FUNCTION_NAME: Record<StageName, string> = {
 /* SecretManager Paths */
 export const PIERIANDX_S3_CREDENTIALS_SECRET_NAME = 'PierianDx/S3Credentials'; // pragma: allowlist secret
 export const PIERIANDX_COLLECT_AUTH_TOKEN_LAMBDA_NAME = 'collectPierianDxAccessToken';
-
-/* Future proofing */
-export const NEW_WORKFLOW_MANAGER_IS_DEPLOYED: Record<StageName, boolean> = {
-  BETA: true,
-  GAMMA: true,
-  PROD: true,
-};
 
 // Used to group event rules and step functions
 export const STACK_PREFIX = 'orca-pdx';

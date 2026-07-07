@@ -1,13 +1,12 @@
 import { StageName } from '@orcabus/platform-cdk-constructs/shared-config/accounts';
-import { EVENT_BUS_NAME } from '@orcabus/platform-cdk-constructs/shared-config/event-bridge';
 import {
   BASE_URL,
   DAG_MAP,
   DEFAULT_DAG_VERSION,
   DEFAULT_PANEL_NAME,
   DEFAULT_PAYLOAD_VERSION,
+  EVENT_BUS_NAME,
   INSTITUTION,
-  NEW_WORKFLOW_MANAGER_IS_DEPLOYED,
   PANEL_MAP,
   PROJECT_INFO_DEFAULT,
   PROJECT_INFO_MAP,
@@ -121,9 +120,6 @@ export const getStatelessStackProps = (stage: StageName): StatelessApplicationSt
   return {
     // Event bus object
     eventBusName: EVENT_BUS_NAME,
-
-    // Workflow manager configuration
-    isNewWorkflowManagerDeployed: NEW_WORKFLOW_MANAGER_IS_DEPLOYED[stage],
 
     // SSM Parameter paths
     ssmParameterPaths: getSsmParameterPaths(),

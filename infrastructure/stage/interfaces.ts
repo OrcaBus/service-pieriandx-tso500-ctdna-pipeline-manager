@@ -1,5 +1,10 @@
 import { SsmParameterPaths, SsmParameterValues } from './ssm/interfaces';
 
+/* Set payload versions */
+export type PayloadVersionType = '2025.09.25';
+
+export const payloadVersionList: PayloadVersionType[] = ['2025.09.25'];
+
 export type DagVersion = '1.0.4';
 
 export type PanelName = 'main' | 'subpanel';
@@ -59,9 +64,6 @@ export interface StatefulApplicationStackConfig {
 export interface StatelessApplicationStackConfig {
   // Event Stuff
   eventBusName: string;
-
-  // Workflow manager stuff
-  isNewWorkflowManagerDeployed: boolean;
 
   // SSM Parameter paths
   ssmParameterPaths: SsmParameterPaths;

@@ -6,26 +6,20 @@ import { Duration } from 'aws-cdk-lib';
  */
 export type EventBridgeRuleName =
   // Dragen Succeeded
-  | 'upstreamSucceededEventLegacy'
   | 'upstreamSucceededEvent'
   // Draft events
-  | 'wrscDraftLegacy'
   | 'wrscDraft'
   // Pre-ready
-  | 'wrscReadyLegacy'
   | 'wrscReady'
   // Monitor runs
   | 'monitorPdxRunsSchedule';
 
 export const eventBridgeRuleNameList: EventBridgeRuleName[] = [
   // Dragen Succeeded event
-  'upstreamSucceededEventLegacy',
   'upstreamSucceededEvent',
   // Draft events
-  'wrscDraftLegacy',
   'wrscDraft',
   // Pre-ready
-  'wrscReadyLegacy',
   'wrscReady',
   // Monitor runs
   'monitorPdxRunsSchedule',
