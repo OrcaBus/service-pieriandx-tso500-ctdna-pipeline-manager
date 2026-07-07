@@ -20,6 +20,9 @@ Unlike ICAv2-based pipelines, version management for PierianDx involves updating
 
 The PierianDx CGW uses DAG (Directed Acyclic Graph) versions to manage its analysis pipeline versions. When a new DAG version becomes available, it needs to be registered in our infrastructure constants and tested before production deployment.
 
+It is best to engage the Velsera/PierianDx [tech support team](https://support.velsera.com/hc/en-us) when working with changes to
+DAGs or PANELs. It is also critically important that any changes are done with the consultation of the curation team.
+
 ## Prerequisites
 
 - AWS credentials configured for the target environment

@@ -38,7 +38,8 @@ After updating, create a PR and deploy via the normal CI/CD pipeline.
 
 ## Draft Event Schema
 
-If you are adding or removing parameters that affect the DRAFT payload structure, you may need to update the [draft event schema](../../../../app/event-schemas/complete-data-draft-schema.json) to reflect these changes.
+If you are adding or removing parameters that affect the DRAFT payload structure, you may need to update the [draft event schema](../../../../app/event-schemas/complete-data-draft/2025.09.25/complete-data-draft-schema.json) to reflect these changes.
+Breaking changes will require a new event schema version.
 
 ## Testing
 
