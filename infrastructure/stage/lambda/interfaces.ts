@@ -5,12 +5,13 @@ import { ISecret } from 'aws-cdk-lib/aws-secretsmanager';
 import { IFunction } from 'aws-cdk-lib/aws-lambda';
 import { IBucket } from 'aws-cdk-lib/aws-s3';
 
-export type LambdaName =
+export type LambdaNameList =
   // Shared pre-ready lambdas
   | 'comparePayload'
   | 'getPayload'
   | 'getWorkflowRunObject'
   | 'generateWruEventObjectWithMergedData'
+  | 'getMissingSchemaFields'
   | 'findLatestWorkflow'
   | 'getDataFilesFromTso500WorkflowRun'
   // Glue upstream
@@ -25,6 +26,9 @@ export type LambdaName =
   | 'getCaseMetadataFromRedcap'
   // Validation
   | 'validateDraftDataCompleteSchema'
+  | 'postSchemaValidation'
+  // Commentary Functions
+  | 'addPopulateDraftComment'
   // Ready to PierianDx Submission
   | 'generatePieriandxObjects'
   | 'generateCase'
@@ -36,12 +40,13 @@ export type LambdaName =
   | 'listActiveWorkflowRuns'
   | 'getInformaticsjobAndReportStatus';
 
-export const lambdaNameList: LambdaName[] = [
+export const lambdaNameList: LambdaNameList[] = [
   // Shared pre-ready lambdas
   'comparePayload',
   'getPayload',
   'getWorkflowRunObject',
   'generateWruEventObjectWithMergedData',
+  'getMissingSchemaFields',
   'findLatestWorkflow',
   'getDataFilesFromTso500WorkflowRun',
   // Glue upstream
@@ -56,6 +61,9 @@ export const lambdaNameList: LambdaName[] = [
   'getCaseMetadataFromRedcap',
   // Validation
   'validateDraftDataCompleteSchema',
+  'postSchemaValidation',
+  // Commentary Functions
+  'addPopulateDraftComment',
   // Ready to PierianDx Submission
   'generatePieriandxObjects',
   'generateCase',
@@ -73,13 +81,16 @@ export interface LambdaRequirements {
   needsOrcabusApiTools?: boolean;
   needsPieriandxLayerAccess?: boolean;
   needsRedcapLambdaPermission?: boolean;
+  needsHigherMemory?: boolean;
   needsSsmParametersAccess?: boolean;
   needsSchemaRegistryAccess?: boolean;
   needsExtendedTimeout?: boolean;
+  needsWorkflowInfo?: boolean;
+  needsRepoUrl?: boolean;
 }
 
 // Lambda requirements mapping
-export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
+export const lambdaRequirementsMap: Record<LambdaNameList, LambdaRequirements> = {
   // Shared pre-ready lambdas
   comparePayload: {},
   getPayload: {
@@ -90,6 +101,10 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   },
   generateWruEventObjectWithMergedData: {
     needsOrcabusApiTools: true,
+  },
+  getMissingSchemaFields: {
+    needsSchemaRegistryAccess: true,
+    needsSsmParametersAccess: true,
   },
   findLatestWorkflow: {
     needsOrcabusApiTools: true,
@@ -123,11 +138,22 @@ export const lambdaRequirementsMap: Record<LambdaName, LambdaRequirements> = {
   },
   getCaseMetadataFromRedcap: {
     needsRedcapLambdaPermission: true,
+    needsHigherMemory: true,
   },
   // Validation
   validateDraftDataCompleteSchema: {
     needsSchemaRegistryAccess: true,
     needsSsmParametersAccess: true,
+  },
+  postSchemaValidation: {
+    needsOrcabusApiTools: true,
+    needsWorkflowInfo: true,
+  },
+  // Commentary Functions
+  addPopulateDraftComment: {
+    needsOrcabusApiTools: true,
+    needsWorkflowInfo: true,
+    needsRepoUrl: true,
   },
   // Ready to PierianDx Submission
   generatePieriandxObjects: {
@@ -174,10 +200,10 @@ export interface BuildLambdasInput {
 }
 
 export interface BuildLambdaInput extends BuildLambdasInput {
-  lambdaName: LambdaName;
+  lambdaName: LambdaNameList;
 }
 
 export interface LambdaObject {
-  lambdaName: LambdaName;
+  lambdaName: LambdaNameList;
   lambdaFunction: PythonUvFunction;
 }
