@@ -5,13 +5,13 @@
     "Get draft payload var": {
       "Type": "Pass",
       "Assign": {
-        "draftDetail": "{% $states.input %}",
-        "draftLibrariesList": "{% $states.input.libraries %}",
-        "draftPayload": "{% (\n  $states.input.payload ? \n  $states.input.payload : {\n    \"version\": \"${__default_payload_version__}\"\n  }\n) %}",
-        "draftData": "{% $states.input.payload.data ? $states.input.payload.data : {} %}",
-        "draftEngineParameters": "{% $states.input.payload.data.engineParameters ? $states.input.payload.data.engineParameters : {} %}",
-        "draftTags": "{% $states.input.payload.data.tags ? $states.input.payload.data.tags : {} %}",
-        "draftInputs": "{% $states.input.payload.data.inputs ? $states.input.payload.data.inputs : {} %}"
+        "detail": "{% $states.input %}",
+        "librariesList": "{% $states.input.libraries %}",
+        "payload": "{% (\n  $states.input.payload ? \n  $states.input.payload : {\n    \"version\": \"${__default_payload_version__}\"\n  }\n) %}",
+        "data": "{% $states.input.payload.data ? $states.input.payload.data : {} %}",
+        "engineParameters": "{% $states.input.payload.data.engineParameters ? $states.input.payload.data.engineParameters : {} %}",
+        "tags": "{% $states.input.payload.data.tags ? $states.input.payload.data.tags : {} %}",
+        "inputs": "{% $states.input.payload.data.inputs ? $states.input.payload.data.inputs : {} %}"
       },
       "Next": "Validate draft data"
     },
@@ -20,7 +20,7 @@
       "Resource": "arn:aws:states:::lambda:invoke",
       "Arguments": {
         "FunctionName": "${__validate_draft_data_complete_schema_lambda_function_arn__}",
-        "Payload": "{% $draftData %}"
+        "Payload": "{% $data %}"
       },
       "Retry": [
         {
@@ -60,7 +60,7 @@
       "Choices": [
         {
           "Next": "Get tags",
-          "Condition": "{% /* https://try.jsonata.org/XDJvywd0c */\n/* Compare the draft tags to the libraries */\n/* Get the draft tags */\n(\n    [ \n        $draftTags.(libraryId),\n        $draftTags.(tumorLibraryId)\n    ] ~> $sort\n)\n=\n/* Get the draft detail libraries */ \n(\n    [\n        $draftLibrariesList.(libraryId)\n    ] ~> $sort \n) %}",
+          "Condition": "{% /* https://try.jsonata.org/XDJvywd0c */\n/* Compare the draft tags to the libraries */\n/* Get the draft tags */\n(\n    [ \n        $tags.(libraryId),\n        $tags.(tumorLibraryId)\n    ] ~> $sort\n)\n=\n/* Get the draft detail libraries */ \n(\n    [\n        $librariesList.(libraryId)\n    ] ~> $sort \n) %}",
           "Comment": "All libraries in tags"
         }
       ],
@@ -72,7 +72,7 @@
       "Arguments": {
         "FunctionName": "${__get_libraries_lambda_function_arn__}",
         "Payload": {
-          "libraries": "{% $draftLibrariesList %}"
+          "libraries": "{% $librariesList %}"
         }
       },
       "Retry": [
@@ -91,7 +91,7 @@
       ],
       "Next": "Get tags",
       "Assign": {
-        "draftTags": "{% $merge(\n  [\n    $states.result.Payload,\n    $draftTags\n  ]\n) %}"
+        "tags": "{% $merge(\n  [\n    $states.result.Payload,\n    $tags\n  ]\n) %}"
       }
     },
     "Get tags": {
@@ -105,7 +105,7 @@
               "Choices": [
                 {
                   "Next": "Set fastq rgid list",
-                  "Condition": "{% $draftTags.fastqRgidList ? true : false %}"
+                  "Condition": "{% $tags.fastqRgidList ? true : false %}"
                 }
               ],
               "Default": "Get fastq list rgids from libraries"
@@ -114,7 +114,7 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "fastqRgidList": "{% $draftTags.fastqRgidList %}"
+                "fastqRgidList": "{% $tags.fastqRgidList %}"
               }
             },
             "Get fastq list rgids from libraries": {
@@ -123,7 +123,7 @@
               "Arguments": {
                 "FunctionName": "${__get_fastq_rgids_from_library_id_lambda_function_arn__}",
                 "Payload": {
-                  "libraryId": "{% $draftTags.libraryId %}"
+                  "libraryId": "{% $tags.libraryId %}"
                 }
               },
               "Retry": [
@@ -157,7 +157,7 @@
               "Arguments": {
                 "FunctionName": "${__get_metadata_tags_lambda_function_arn__}",
                 "Payload": {
-                  "libraryId": "{% $draftTags.libraryId %}"
+                  "libraryId": "{% $tags.libraryId %}"
                 }
               },
               "Retry": [
@@ -191,7 +191,7 @@
               "Arguments": {
                 "FunctionName": "${__get_redcap_tags_for_library_id_lambda_function_arn__}",
                 "Payload": {
-                  "libraryId": "{% $draftTags.libraryId %}"
+                  "libraryId": "{% $tags.libraryId %}"
                 }
               },
               "Retry": [
@@ -220,11 +220,93 @@
           }
         }
       ],
-      "Next": "Get libraries with readsets",
+      "Next": "Tags Have Changed",
       "Assign": {
-        "tags": "{% /* https://try.jsonata.org/05K2l3beH */\n/* List to merge together */\n[\n    /* Start with the draft tags */\n    $draftTags,\n    /* Merge the results list together */\n    $merge($states.result)\n] \n/* Then merge these initial tags with states.result  */\n~> $merge\n/* Remove any keys with values */\n~> $sift(function($v, $k){$v != null})\n/*\n  We also remove the defaultSnomedDiseaseCode attribute and\n  let it be its own variable\n*/\n~> | $ | {}, [\"defaultSnomedDiseaseCode\"] |\n %}",
+        "tags": "{% /* https://try.jsonata.org/05K2l3beH */\n/* List to merge together */\n[\n    /* Start with the draft tags */\n    $tags,\n    /* Merge the results list together */\n    $merge($states.result)\n] \n/* Then merge these initial tags with states.result  */\n~> $merge\n/* Remove any keys with values */\n~> $sift(function($v, $k){$v != null})\n/*\n  We also remove the defaultSnomedDiseaseCode attribute and\n  let it be its own variable\n*/\n~> | $ | {}, [\"defaultSnomedDiseaseCode\"] |\n %}",
         "defaultSnomedDiseaseCode": "{% $states.result[2] ~> \n$lookup(\"defaultSnomedDiseaseCode\") %}"
       }
+    },
+    "Tags Have Changed": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Comment": "Tags Have Changed",
+          "Next": "Add change comment",
+          "Condition": "{% ( ( $data.tags ? $data.tags : {} ) = $tags ~> $not ) %}"
+        }
+      ],
+      "Default": "Add updating inputs comment"
+    },
+    "Add change comment": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__add_populate_draft_comment_lambda_function_arn__}",
+        "Payload": {
+          "workflowRunId": "{% $detail.orcabusId %}",
+          "commentType": "tags_changed",
+          "executionArn": "{% $states.context.Execution.Id %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Put DRAFT update event (tags changed)",
+      "Output": "{% $states.input %}"
+    },
+    "Put DRAFT update event (tags changed)": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::events:putEvents",
+      "Arguments": {
+        "Entries": [
+          {
+            "Detail": "{% $merge([\n  $detail,\n  {\n    \"id\": null,\n    \"status\": \"${__draft_status__}\",\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"libraries\": $librariesList,\n    \"payload\": (\n      $merge([\n        $payload,\n        {\n          \"refId\": null,\n          \"data\": (\n            {\n              \"inputs\": ( $inputs ? $inputs : null ),\n              \"tags\": ( $tags ? $tags : null )\n            }\n            ~> $sift(function($v, $k){$v != null})\n          )\n        }\n      ])\n      ~> $sift(function($v, $k){$v != null})\n    )\n  }\n])\n~> $sift(function($v, $k){$v != null}) %}",
+            "DetailType": "${__workflow_run_update_event_detail_type__}",
+            "EventBusName": "${__event_bus_name__}",
+            "Source": "${__stack_source__}"
+          }
+        ]
+      },
+      "End": true
+    },
+    "Add updating inputs comment": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__add_populate_draft_comment_lambda_function_arn__}",
+        "Payload": {
+          "workflowRunId": "{% $detail.orcabusId %}",
+          "commentType": "updating_inputs",
+          "executionArn": "{% $states.context.Execution.Id %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Get libraries with readsets",
+      "Output": "{% $states.input %}"
     },
     "Get libraries with readsets": {
       "Type": "Parallel",
@@ -275,7 +357,7 @@
               },
               "End": true,
               "Output": {
-                "library": "{% [\n  /* Draft libraries list */\n  $draftLibrariesList ~>\n  $single(function($libraryIter){\n    $libraryIter.libraryId = $tags.libraryId\n  }),\n  {\n    \"readsets\": $states.result\n  }\n] ~>\n$merge %}"
+                "library": "{% [\n  /* Draft libraries list */\n  $librariesList ~>\n  $single(function($libraryIter){\n    $libraryIter.libraryId = $tags.libraryId\n  }),\n  {\n    \"readsets\": $states.result\n  }\n] ~>\n$merge %}"
               }
             }
           }
@@ -402,7 +484,7 @@
               "Choices": [
                 {
                   "Next": "Use set dag version",
-                  "Condition": "{% $draftInputs.dagVersion ? true : false %}"
+                  "Condition": "{% $inputs.dagVersion ? true : false %}"
                 }
               ],
               "Default": "Get latest dagVersion"
@@ -411,7 +493,7 @@
               "Type": "Pass",
               "End": true,
               "Output": {
-                "dagVersion": "{% $draftInputs.dagVersion %}"
+                "dagVersion": "{% $inputs.dagVersion %}"
               }
             },
             "Get latest dagVersion": {
@@ -453,7 +535,7 @@
               "Choices": [
                 {
                   "Next": "No need to query",
-                  "Condition": "{% $draftInputs.dataFiles ? true : false %}"
+                  "Condition": "{% $inputs.dataFiles ? true : false %}"
                 }
               ],
               "Default": "Find matching ctDNA TSO500 workflows"
@@ -461,7 +543,7 @@
             "No need to query": {
               "Type": "Pass",
               "End": true,
-              "Output": "{% $draftInputs.dataFiles %}"
+              "Output": "{% $inputs.dataFiles %}"
             },
             "Find matching ctDNA TSO500 workflows": {
               "Type": "Task",
@@ -472,7 +554,7 @@
                   "workflowName": "${__dragen_tso500_ctdna_workflow_name__}",
                   "status": "${__succeeded_status__}",
                   "libraries": "{% $libraries %}",
-                  "analysisRunId": "{% $draftDetail.analysisRun ? $draftDetail.analysisRun.id : null %}"
+                  "analysisRunId": "{% $detail.analysisRun ? $detail.analysisRun.id : null %}"
                 }
               },
               "Retry": [
@@ -491,7 +573,7 @@
               ],
               "Next": "Has matching ctDNA Event",
               "Output": {
-                "dragenTso500ctDnaWorkflowRunObject": "{% $states.result.Payload.workflowRunObject %}"
+                "dragenTso500ctDnaWorkflowRunObject": "{% $states.result.Payload.workflowRunList[0] ? $states.result.Payload.workflowRunList[0] : null %}"
               }
             },
             "Has matching ctDNA Event": {
@@ -558,7 +640,7 @@
       "Arguments": {
         "FunctionName": "${__generate_wru_event_object_with_merged_data_lambda_function_arn__}",
         "Payload": {
-          "portalRunId": "{% $draftDetail.portalRunId %}",
+          "portalRunId": "{% $detail.portalRunId %}",
           "libraries": "{% $libraries %}",
           "payload": {
             "version": "${__default_payload_version__}",
@@ -602,7 +684,7 @@
       "Arguments": {
         "FunctionName": "${__compare_payload_lambda_function_arn__}",
         "Payload": {
-          "oldPayload": "{% $draftPayload ~>\n| $ | {}, [\"orcabusId\", \"refId\"] | %}",
+          "oldPayload": "{% $payload ~>\n| $ | {}, [\"orcabusId\", \"refId\"] | %}",
           "newPayload": "{% $draftUpdate.payload %}"
         }
       },
@@ -629,22 +711,11 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Next": "New Workflow Manager Deployed",
+          "Next": "Put DRAFT update event",
           "Condition": "{% $states.input.hasChanged ? true : false %}"
         }
       ],
-      "Default": "No event to push"
-    },
-    "New Workflow Manager Deployed": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
-          "Comment": "New Workflow Manager is Deployed",
-          "Next": "Put DRAFT update event"
-        }
-      ],
-      "Default": "Push DRAFT Event (legacy)"
+      "Default": "Get missing schema fields"
     },
     "Put DRAFT update event": {
       "Type": "Task",
@@ -652,7 +723,7 @@
       "Arguments": {
         "Entries": [
           {
-            "Detail": "{% $merge([\n  $draftDetail,\n  $draftUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"status\": \"${__draft_status__}\"\n  }\n])\n/* Remove null inputs like id */\n~> $sift(function($v, $k){$v != null}) %}",
+            "Detail": "{% $merge([\n  $detail,\n  $draftUpdate,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"status\": \"${__draft_status__}\"\n  }\n])\n/* Remove null inputs like id */\n~> $sift(function($v, $k){$v != null}) %}",
             "DetailType": "${__workflow_run_update_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
             "Source": "${__stack_source__}"
@@ -661,23 +732,64 @@
       },
       "End": true
     },
-    "No event to push": {
-      "Type": "Pass",
-      "End": true
-    },
-    "Push DRAFT Event (legacy)": {
+    "Get missing schema fields": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::events:putEvents",
+      "Resource": "arn:aws:states:::lambda:invoke",
       "Arguments": {
-        "Entries": [
-          {
-            "Detail": "{% /* https://try.jsonata.org/r0aCmiix- */\n$merge([\n  $draftDetail,\n  $draftUpdate,\n  {\n    \"status\": \"${__draft_status__}\",\n    \"timestamp\": $states.context.State.EnteredTime,\n    /* Drop readsets from libraries */\n    \"libraries\": ( $draftDetail.libraries ~> | $ | {}, [\"readsets\"] | )\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
-            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
-            "EventBusName": "${__event_bus_name__}",
-            "Source": "${__stack_source__}"
-          }
-        ]
+        "FunctionName": "${__get_missing_schema_fields_lambda_function_arn__}",
+        "Payload": {
+          "data": "{% $draftUpdate.payload.data %}",
+          "payloadVersion": "{% $payload.version ? $payload.version : '${__default_payload_version__}' %}"
+        }
       },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Output": "{% $states.result.Payload %}",
+      "Next": "Add no change comment"
+    },
+    "Add no change comment": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__add_populate_draft_comment_lambda_function_arn__}",
+        "Payload": {
+          "workflowRunId": "{% $detail.orcabusId %}",
+          "commentType": "no_change_missing_fields",
+          "missingFields": "{% $states.input.missingFields %}",
+          "executionArn": "{% $states.context.Execution.Id %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Success (no change)",
+      "Output": "{% $states.input %}"
+    },
+    "Success (no change)": {
+      "Type": "Pass",
       "End": true
     }
   },
