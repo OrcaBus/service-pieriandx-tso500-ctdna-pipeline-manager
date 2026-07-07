@@ -13,6 +13,7 @@ from os import environ
 from typing import Dict
 import logging
 from jsonschema import ValidationError
+from pathlib import Path
 
 # Type checking imports
 if typing.TYPE_CHECKING:
@@ -21,7 +22,8 @@ if typing.TYPE_CHECKING:
 
 # Globals
 SSM_REGISTRY_NAME_ENV_VAR = "SSM_REGISTRY_NAME"
-SSM_SCHEMA_NAME_ENV_VAR = "SSM_SCHEMA_NAME"
+SSM_SCHEMA_PATH_ENV_VAR = "SSM_SCHEMA_PATH"
+DEFAULT_PAYLOAD_VERSION_ENV_VAR = "DEFAULT_PAYLOAD_VERSION"
 
 # Set up logging
 logger = logging.getLogger()
@@ -90,11 +92,26 @@ def validate_draft_schema(
 def handler(event, context) -> Dict[str, bool]:
     """
     Given a draft schema, validate it against the current schema and print the results.
-    :return:
+
+    Input:
+      {
+        "data": { ... },              # The data payload to validate
+        "payloadVersion": "2025.09.25"  # Optional, defaults to DEFAULT_PAYLOAD_VERSION
+      }
+
+    Output:
+      {"isValid": true}   — validation passes
+      {"isValid": false}  — validation fails
     """
+    # Get the event data
+    payload_version = event.get("payloadVersion", environ[DEFAULT_PAYLOAD_VERSION_ENV_VAR])
+    payload_data = event.get('data', event)
+
     # Get the SSM parameters
     schema_registry = get_ssm_parameter_value(environ[SSM_REGISTRY_NAME_ENV_VAR])
-    schema_name = json.loads(get_ssm_parameter_value(environ[SSM_SCHEMA_NAME_ENV_VAR]))['schemaName']
+    schema_name = json.loads(get_ssm_parameter_value(
+        str(Path(environ[SSM_SCHEMA_PATH_ENV_VAR]) / payload_version)
+    ))['schemaName']
 
     # Get the current schema from the schema registry
     current_schema = get_schema_from_registry(
@@ -102,12 +119,11 @@ def handler(event, context) -> Dict[str, bool]:
         schema_name=schema_name
     )
 
-    # Get the draft schema from the schema registry
+    # Validate the draft schema against the current schema
     return {
         "isValid": validate_draft_schema(
             current_schema,
-            # Assuming the event contains the draft schema as a JSON string
-            json.dumps(event)
+            json.dumps(payload_data)
         )
     }
 
@@ -116,9 +132,10 @@ def handler(event, context) -> Dict[str, bool]:
 #     from os import environ
 #     import json
 #     environ['AWS_PROFILE'] = 'umccr-development'
-#     environ["SSM_REGISTRY_NAME"] = '/orcabus/workflows/dragen-wgts-dna/schemas/registry'
-#     environ["SSM_SCHEMA_NAME"] = '/orcabus/workflows/dragen-wgts-dna/schemas/dragen-wgts-dna-complete-data-draft/latest'
+#     environ["SSM_REGISTRY_NAME"] = '/orcabus/workflows/pieriandx-tso500-ctdna/schemas/registry'
+#     environ["SSM_SCHEMA_PATH"] = '/orcabus/workflows/pieriandx-tso500-ctdna/schemas/complete-data-draft'
+#     environ["DEFAULT_PAYLOAD_VERSION"] = '2025.09.25'
 #     print(json.dumps(
-#         handler({}, None),
+#         handler({"data": {}, "payloadVersion": "2025.09.25"}, None),
 #         indent=4
 #     ))
