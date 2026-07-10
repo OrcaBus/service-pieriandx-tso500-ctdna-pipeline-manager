@@ -126,7 +126,7 @@ Reacts to upstream Dragen TSO500 ctDNA SUCCEEDED events:
 
 ## Draft Event Payload
 
-A DRAFT event can be submitted with a minimal `data` payload — the populate state machine resolves all defaults. The `data` object may be omitted entirely. The final validated payload must satisfy the [complete-data draft schema](app/event-schemas/complete-data-draft-schema.json).
+A DRAFT event can be submitted with a minimal `data` payload — the populate state machine resolves all defaults. The `data` object may be omitted entirely. The final validated payload must satisfy the [complete-data draft schema](app/event-schemas/complete-data-draft/2025.09.25/complete-data-draft-schema.json).
 
 ### Minimal DRAFT event detail
 
