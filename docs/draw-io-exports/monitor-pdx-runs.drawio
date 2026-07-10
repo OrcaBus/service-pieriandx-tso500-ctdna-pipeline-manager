@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="monitor-pdx-runs" id="monitor-pdx-runs">
-    <mxGraphModel dx="1200" dy="1800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="1200" dy="1600" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
@@ -32,7 +32,7 @@
           <mxGeometry x="450" y="338" width="200" height="46" as="geometry"/>
         </mxCell>
 
-        <!-- Step: For each workflow run (Map) header -->
+        <!-- Step: For each workflow run (Map) -->
         <mxCell id="n6" value="For each workflow run (Map)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=13;fontStyle=1;fontColor=#1a1a1a;" vertex="1" parent="1">
           <mxGeometry x="25" y="330" width="300" height="62" as="geometry"/>
         </mxCell>
@@ -77,24 +77,14 @@
           <mxGeometry x="400" y="1108" width="200" height="46" as="geometry"/>
         </mxCell>
 
-        <!-- Decision: New workflow manager deployed? -->
-        <mxCell id="n15" value="New WFM deployed?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=13;fontStyle=1;fontColor=#1a1a1a;" vertex="1" parent="1">
-          <mxGeometry x="55" y="1210" width="240" height="62" as="geometry"/>
-        </mxCell>
-
         <!-- Step: Workflow Run Update Event -->
-        <mxCell id="n16" value="Workflow Run Update Event" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=13;fontStyle=1;fontColor=#1a1a1a;" vertex="1" parent="1">
-          <mxGeometry x="25" y="1320" width="300" height="62" as="geometry"/>
-        </mxCell>
-
-        <!-- Step: Workflow Run State Change event (legacy) -->
-        <mxCell id="n17" value="Workflow Run State Change event (legacy)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=13;fontStyle=1;fontColor=#1a1a1a;" vertex="1" parent="1">
-          <mxGeometry x="400" y="1210" width="300" height="62" as="geometry"/>
+        <mxCell id="n15" value="Workflow Run Update Event" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=13;fontStyle=1;fontColor=#1a1a1a;" vertex="1" parent="1">
+          <mxGeometry x="25" y="1210" width="300" height="62" as="geometry"/>
         </mxCell>
 
         <!-- Terminal: Success (end of map) -->
-        <mxCell id="n18" value="Success" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=13;fontStyle=1;fontColor=#1a1a1a;arcSize=50;" vertex="1" parent="1">
-          <mxGeometry x="75" y="1430" width="200" height="46" as="geometry"/>
+        <mxCell id="n16" value="Success" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=13;fontStyle=1;fontColor=#1a1a1a;arcSize=50;" vertex="1" parent="1">
+          <mxGeometry x="75" y="1320" width="200" height="46" as="geometry"/>
         </mxCell>
 
         <!-- ═══════════════ EDGES ═══════════════ -->
@@ -174,28 +164,13 @@
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- Payloads differ? → New WFM deployed? (Yes) -->
+        <!-- Payloads differ? → Workflow Run Update Event (Yes) -->
         <mxCell id="e15" value="Yes" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#555555;strokeWidth=2;fontSize=10;fontColor=#888888;fontStyle=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n13" target="n15" parent="1">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- New WFM deployed? → Workflow Run Update Event (Yes) -->
-        <mxCell id="e16" value="Yes" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#555555;strokeWidth=2;fontSize=10;fontColor=#888888;fontStyle=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n15" target="n16" parent="1">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-
-        <!-- New WFM deployed? → Workflow Run State Change event (legacy) (No, dashed) -->
-        <mxCell id="e17" value="No" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#888888;strokeWidth=2;dashed=1;dashPattern=8 4;fontSize=10;fontColor=#888888;fontStyle=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="n15" target="n17" parent="1">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-
         <!-- Workflow Run Update Event → Success (end of map) -->
-        <mxCell id="e18" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#555555;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n16" target="n18" parent="1">
-          <mxGeometry relative="1" as="geometry"/>
-        </mxCell>
-
-        <!-- Workflow Run State Change event (legacy) → Success (end of map) -->
-        <mxCell id="e19" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#888888;strokeWidth=2;dashed=1;dashPattern=8 4;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" source="n17" target="n18" parent="1">
+        <mxCell id="e16" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#555555;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="n15" target="n16" parent="1">
           <mxGeometry relative="1" as="geometry"/>
         </mxCell>
 
