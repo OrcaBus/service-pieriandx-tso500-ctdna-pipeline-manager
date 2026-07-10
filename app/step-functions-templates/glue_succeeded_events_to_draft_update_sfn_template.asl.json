@@ -145,7 +145,7 @@
                             "Choices": [
                               {
                                 "Next": "No need to query",
-                                "Condition": "{% $payload.inputs.dataFiles ? true : false %}"
+                                "Condition": "{% $payload.data.inputs.dataFiles ? true : false %}"
                               }
                             ],
                             "Default": "Get files from tso500 workflow output"
