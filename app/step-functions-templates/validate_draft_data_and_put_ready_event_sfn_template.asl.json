@@ -1,5 +1,5 @@
 {
-  "Comment": "A description of my state machine",
+  "Comment": "Validate draft data and put READY event for PierianDx TSO500 ctDNA",
   "StartAt": "Save Event Vars",
   "States": {
     "Save Event Vars": {
@@ -8,7 +8,8 @@
       "Assign": {
         "detail": "{% $states.input %}",
         "payload": "{% $states.input.payload ? $states.input.payload : {} %}",
-        "payloadData": "{% $states.input.payload.data ? $states.input.payload.data : {} %}"
+        "payloadData": "{% $states.input.payload.data ? $states.input.payload.data : {} %}",
+        "workflowRunId": "{% $states.input.orcabusId %}"
       }
     },
     "Validate Draft Complete Event": {
@@ -19,7 +20,11 @@
       },
       "Arguments": {
         "FunctionName": "${__validate_draft_data_complete_schema_lambda_function_arn__}",
-        "Payload": "{% $payloadData %}"
+        "Payload": {
+          "data": "{% $payloadData %}",
+          "workflowRunId": "{% $workflowRunId %}",
+          "addCommentOnError": false
+        }
       },
       "Retry": [
         {
@@ -41,25 +46,52 @@
       "Type": "Choice",
       "Choices": [
         {
-          "Next": "New workflow manager is deployed",
+          "Next": "Run Post Schema Validation",
           "Condition": "{% $states.input.isValid %}",
           "Comment": "Draft is Valid"
         }
       ],
       "Default": "Pass"
     },
-    "New workflow manager is deployed": {
+    "Run Post Schema Validation": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Output": "{% $states.result.Payload %}",
+      "Arguments": {
+        "FunctionName": "${__post_schema_validation_lambda_function_arn__}",
+        "Payload": {
+          "data": "{% $payloadData %}",
+          "workflowRunId": "{% $workflowRunId %}",
+          "executionArn": "{% $states.context.Execution.Id %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Workflow inputs are valid"
+    },
+    "Workflow inputs are valid": {
       "Type": "Choice",
       "Choices": [
         {
-          "Next": "Push READY Event",
-          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
-          "Comment": "New workflow manager is deployed"
+          "Next": "Push WRU READY Event",
+          "Condition": "{% $states.input.isValid %}"
         }
       ],
-      "Default": "Push READY Event (legacy)"
+      "Default": "Pass"
     },
-    "Push READY Event": {
+    "Push WRU READY Event": {
       "Type": "Task",
       "Resource": "arn:aws:states:::events:putEvents",
       "Arguments": {
@@ -68,22 +100,7 @@
             "Detail": "{% $merge([\n  $detail,\n  {\n    \"timestamp\": $now(),\n    \"status\": \"${__ready_event_status__}\",\n    \"payload\": (\n      $merge([\n        $detail ~> $lookup(\"payload\"),\n        {\n          \"orcabusId\": null,\n          \"refId\": null\n        }\n      ]) ~>\n      $sift(function($v, $k){$v != null})\n    )\n  }\n]) %}",
             "DetailType": "${__workflow_run_update_event_detail_type__}",
             "EventBusName": "${__event_bus_name__}",
-            "Source": "${__stack_source__}"
-          }
-        ]
-      },
-      "End": true
-    },
-    "Push READY Event (legacy)": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::events:putEvents",
-      "Arguments": {
-        "Entries": [
-          {
-            "Detail": "{% $merge([\n  $detail,\n  {\n    \"timestamp\": $now(),\n    \"status\": \"${__ready_event_status__}\"\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
-            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
-            "EventBusName": "${__event_bus_name__}",
-            "Source": "${__stack_source__}"
+            "Source": "${__stack_source__}.validator"
           }
         ]
       },

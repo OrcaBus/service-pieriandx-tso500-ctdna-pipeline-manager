@@ -30,7 +30,6 @@ import {
 } from '../constants';
 import { Construct } from 'constructs';
 import { camelCaseToSnakeCase } from '../utils';
-import { getLambdaResourceLogicalArn } from '../lambda';
 
 function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps): {
   [key: string]: string;
@@ -45,8 +44,8 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
 
   /* Substitute lambdas in the state machine definition */
   for (const lambdaObject of lambdaFunctions) {
-    const sfnSubtitutionKey = `__${camelCaseToSnakeCase(lambdaObject.lambdaName)}_lambda_function_arn__`;
-    definitionSubstitutions[sfnSubtitutionKey] =
+    const sfnSubstitutionKey = `__${camelCaseToSnakeCase(lambdaObject.lambdaName)}_lambda_function_arn__`;
+    definitionSubstitutions[sfnSubstitutionKey] =
       lambdaObject.lambdaFunction.latestVersion.functionArn;
   }
 
@@ -72,8 +71,6 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
       WORKFLOW_RUN_UPDATE_DETAIL_TYPE;
     definitionSubstitutions['__stack_source__'] = EVENT_SOURCE;
     definitionSubstitutions['__ready_event_status__'] = READY_STATUS;
-    definitionSubstitutions['__new_workflow_manager_is_deployed__'] =
-      props.isNewWorkflowManagerDeployed.toString();
   }
 
   if (sfnRequirements.needsSsmParameterStoreAccess) {
@@ -102,7 +99,7 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
 
   if (sfnRequirements.needsEventRulePermissions) {
     definitionSubstitutions['__scheduler_rule_name__'] =
-      `${STACK_PREFIX}-${MONITOR_EVENT_RULE_NAME}`;
+      `${STACK_PREFIX}--${MONITOR_EVENT_RULE_NAME}`;
   }
 
   return definitionSubstitutions;
@@ -121,19 +118,13 @@ function wireUpStateMachinePermissions(props: WireUpPermissionsProps): void {
   for (const lambdaObject of lambdaFunctions) {
     lambdaObject.lambdaFunction.grantInvoke(props.sfnObject);
   }
-  // Build appliesTo list: include the action plus Resource::... entries that reference the CFN logical ID tokens
   NagSuppressions.addResourceSuppressions(
     props.sfnObject,
     [
       {
         id: 'AwsSolutions-IAM5',
-        reason: 'We need to give the state machine permissions to invoke the lambda functions',
-        appliesTo: [
-          'Action::lambda:InvokeFunction',
-          ...lambdaFunctions
-            .map((lambdaObject) => getLambdaResourceLogicalArn(lambdaObject.lambdaFunction))
-            .filter((logicalId) => logicalId !== null),
-        ],
+        reason:
+          'We invoke $LATEST to allow redrives after Lambda bug fixes without redeploying the state machine',
       },
     ],
     true
@@ -162,7 +153,8 @@ function wireUpStateMachinePermissions(props: WireUpPermissionsProps): void {
       [
         {
           id: 'AwsSolutions-IAM5',
-          reason: 'We need to give access to the full prefix for the SSM parameter store',
+          reason:
+            'Wildcard covers SSM parameters under the workflow root prefix; individual parameter paths include dynamic workflow versions that cannot be enumerated at deploy time',
         },
       ],
       true
@@ -175,7 +167,7 @@ function wireUpStateMachinePermissions(props: WireUpPermissionsProps): void {
       new iam.PolicyStatement({
         actions: ['events:EnableRule', 'events:DisableRule'],
         resources: [
-          `arn:aws:events:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:rule/${STACK_PREFIX}-${MONITOR_EVENT_RULE_NAME}`,
+          `arn:aws:events:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:rule/${STACK_PREFIX}--${MONITOR_EVENT_RULE_NAME}`,
         ],
       })
     );
@@ -187,7 +179,7 @@ function buildStepFunction(scope: Construct, props: BuildStepFunctionProps): Ste
 
   /* Create the state machine definition substitutions */
   const stateMachine = new sfn.StateMachine(scope, props.stateMachineName, {
-    stateMachineName: `${STACK_PREFIX}-${props.stateMachineName}`,
+    stateMachineName: `${STACK_PREFIX}--${props.stateMachineName}`,
     definitionBody: sfn.DefinitionBody.fromFile(
       path.join(STEP_FUNCTIONS_DIR, sfnNameToSnakeCase + `_sfn_template.asl.json`)
     ),
@@ -208,11 +200,13 @@ function buildStepFunction(scope: Construct, props: BuildStepFunctionProps): Ste
     [
       {
         id: 'AwsSolutions-SF1',
-        reason: 'We do not need all events to be logged',
+        reason:
+          'State machine logging not required; executions are monitored via EventBridge events and CloudWatch metrics rather than full execution history logs',
       },
       {
         id: 'AwsSolutions-SF2',
-        reason: 'We do not need X-Ray tracing',
+        reason:
+          'X-Ray tracing not required for this state machine; distributed tracing is handled at the EventBridge and Lambda layers',
       },
     ],
     true
@@ -237,7 +231,6 @@ export function buildAllStepFunctions(
         stateMachineName: stepFunctionName,
         lambdaObjects: props.lambdaObjects,
         eventBus: props.eventBus,
-        isNewWorkflowManagerDeployed: props.isNewWorkflowManagerDeployed,
         ssmParameterPaths: props.ssmParameterPaths,
       })
     );

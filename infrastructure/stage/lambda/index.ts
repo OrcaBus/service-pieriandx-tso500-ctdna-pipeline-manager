@@ -6,7 +6,14 @@ import {
   lambdaRequirementsMap,
 } from './interfaces';
 import { PythonUvFunction } from '@orcabus/platform-cdk-constructs/lambda';
-import { LAMBDA_DIR, SCHEMA_REGISTRY_NAME, SSM_SCHEMA_ROOT } from '../constants';
+import {
+  LAMBDA_DIR,
+  SCHEMA_REGISTRY_NAME,
+  SSM_SCHEMA_ROOT,
+  WORKFLOW_NAME,
+  DEFAULT_PAYLOAD_VERSION,
+} from '../constants';
+import { REPO_NAME } from '../../toolchain/constants';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Duration } from 'aws-cdk-lib';
 import { NagSuppressions } from 'cdk-nag';
@@ -29,17 +36,27 @@ function buildLambda(scope: Construct, props: BuildLambdaInput): LambdaObject {
     index: lambdaNameToSnakeCase + '.py',
     handler: 'handler',
     timeout: lambdaRequirements.needsExtendedTimeout ? Duration.seconds(900) : Duration.seconds(60),
-    memorySize: 1024,
+    memorySize:
+      lambdaRequirements.needsPieriandxLayerAccess || lambdaRequirements.needsHigherMemory
+        ? 1024
+        : 512,
     includeOrcabusApiToolsLayer: lambdaRequirements.needsOrcabusApiTools,
   });
 
-  // AwsSolutions-IAM4 - We need to add this for the lambda to work
+  // AwsSolutions-L1 - Python 3.14 is not yet in the cdk-nag approved list but is our target runtime
+  // AwsSolutions-IAM4 - Basic execution role provides CloudWatch Logs permissions needed by all Lambdas
   NagSuppressions.addResourceSuppressions(
     lambdaFunction,
     [
       {
+        id: 'AwsSolutions-L1',
+        reason:
+          'Python 3.14 is not yet in the cdk-nag approved list but is our target runtime for ARM64 Lambda functions',
+      },
+      {
         id: 'AwsSolutions-IAM4',
-        reason: 'We use the basic execution role for lambda functions',
+        reason:
+          'Basic execution managed policy provides CloudWatch Logs permissions required by all Lambda functions',
       },
     ],
     true
@@ -57,13 +74,13 @@ function buildLambda(scope: Construct, props: BuildLambdaInput): LambdaObject {
         ],
       })
     );
-    /* As such we need to add the wildcard to the resource */
     NagSuppressions.addResourceSuppressions(
       lambdaFunction,
       [
         {
           id: 'AwsSolutions-IAM5',
-          reason: 'We need to give the lambda access to ssm parameters under the prefix',
+          reason:
+            'Wildcard covers SSM parameters under the workflow root path; specific parameter names include versions and project types determined at runtime',
         },
       ],
       true
@@ -134,7 +151,8 @@ function buildLambda(scope: Construct, props: BuildLambdaInput): LambdaObject {
       [
         {
           id: 'AwsSolutions-IAM5',
-          reason: 'We need to give the lambda access to the s3 bucket which results in a wildcard',
+          reason:
+            'Wildcard covers S3 objects in the PierianDx lookup bucket; individual object ARNs cannot be enumerated at deploy time because SNOMED mapping files are versioned dynamically',
         },
       ],
       true
@@ -150,13 +168,13 @@ function buildLambda(scope: Construct, props: BuildLambdaInput): LambdaObject {
     );
 
     /* We dont have control over the redcap lambda, so we allow our lambda to run any version */
-    /* As such we need to add the wildcard to the resource */
     NagSuppressions.addResourceSuppressions(
       lambdaFunction,
       [
         {
           id: 'AwsSolutions-IAM5',
-          reason: 'Allow redcap lambda to be invoked on any version',
+          reason:
+            'Wildcard covers all versions of the RedCap Lambda function; version-specific ARNs cannot be enumerated because the RedCap Lambda is managed externally',
         },
       ],
       true
@@ -179,13 +197,13 @@ function buildLambda(scope: Construct, props: BuildLambdaInput): LambdaObject {
     );
 
     /* Since we dont ask which schema, we give the lambda access to all schemas in the registry */
-    /* As such we need to add the wildcard to the resource */
     NagSuppressions.addResourceSuppressions(
       lambdaFunction,
       [
         {
           id: 'AwsSolutions-IAM5',
-          reason: 'We need to give the lambda access to all schemas in the registry',
+          reason:
+            'Wildcard covers all schema versions in the registry; individual schema ARNs cannot be enumerated at deploy time because versions are created dynamically',
         },
       ],
       true
@@ -193,15 +211,33 @@ function buildLambda(scope: Construct, props: BuildLambdaInput): LambdaObject {
   }
 
   /*
-    Special if the lambdaName is 'validateDraftCompleteSchema', we need to add in the ssm parameters
-    to the REGISTRY_NAME and SCHEMA_NAME
+    For Lambdas that need schema registry access,
+    we need to add in the ssm parameters for REGISTRY_NAME and SCHEMA_PATH
    */
-  if (props.lambdaName === 'validateDraftDataCompleteSchema') {
+  if (lambdaRequirements.needsSchemaRegistryAccess) {
     const draftSchemaName: SchemaNames = 'completeDataDraft';
     lambdaFunction.addEnvironment('SSM_REGISTRY_NAME', path.join(SSM_SCHEMA_ROOT, 'registry'));
     lambdaFunction.addEnvironment(
-      'SSM_SCHEMA_NAME',
-      path.join(SSM_SCHEMA_ROOT, camelCaseToKebabCase(draftSchemaName), 'latest')
+      'SSM_SCHEMA_PATH',
+      path.join(SSM_SCHEMA_ROOT, camelCaseToKebabCase(draftSchemaName))
+    );
+    lambdaFunction.addEnvironment('DEFAULT_PAYLOAD_VERSION', DEFAULT_PAYLOAD_VERSION);
+  }
+
+  /*
+    Workflow info, usually for comment generation on the workflow run in the OrcaUI
+   */
+  if (lambdaRequirements.needsWorkflowInfo) {
+    lambdaFunction.addEnvironment('WORKFLOW_NAME', WORKFLOW_NAME);
+  }
+
+  /*
+    Repository GitHub URL, used in user-facing comments to link to the README
+   */
+  if (lambdaRequirements.needsRepoUrl) {
+    lambdaFunction.addEnvironment(
+      'REPOSITORY_GITHUB_URL',
+      `https://github.com/OrcaBus/${REPO_NAME}`
     );
   }
 

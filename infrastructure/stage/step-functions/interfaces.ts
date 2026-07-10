@@ -1,7 +1,7 @@
 import { IEventBus } from 'aws-cdk-lib/aws-events';
 import { StateMachine } from 'aws-cdk-lib/aws-stepfunctions';
 
-import { LambdaName, LambdaObject } from '../lambda/interfaces';
+import { LambdaNameList, LambdaObject } from '../lambda/interfaces';
 import { SsmParameterPaths } from '../ssm/interfaces';
 
 /**
@@ -49,7 +49,6 @@ export interface StepFunctionInput {
 export interface BuildStepFunctionProps extends StepFunctionInput {
   lambdaObjects: LambdaObject[];
   eventBus: IEventBus;
-  isNewWorkflowManagerDeployed: boolean;
   ssmParameterPaths: SsmParameterPaths;
 }
 
@@ -88,7 +87,7 @@ export const stepFunctionsRequirementsMap: Record<StateMachineName, StepFunction
   },
 };
 
-export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = {
+export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaNameList[]> = {
   glueSucceededEventsToDraftUpdate: [
     // Shared pre-ready lambdas
     'comparePayload',
@@ -104,6 +103,7 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     'getPayload',
     'getWorkflowRunObject',
     'generateWruEventObjectWithMergedData',
+    'getMissingSchemaFields',
     'findLatestWorkflow',
     'getDataFilesFromTso500WorkflowRun',
     // Draft to ready (generic)
@@ -117,10 +117,13 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaName[]> = 
     'getCaseMetadataFromRedcap',
     // Validation
     'validateDraftDataCompleteSchema',
+    // Commentary
+    'addPopulateDraftComment',
   ],
   validateDraftDataAndPutReadyEvent: [
     // Validation
     'validateDraftDataCompleteSchema',
+    'postSchemaValidation',
   ],
   launchPieriandxFromReadyEvent: [
     // Ready to ICAv2 WES lambdas

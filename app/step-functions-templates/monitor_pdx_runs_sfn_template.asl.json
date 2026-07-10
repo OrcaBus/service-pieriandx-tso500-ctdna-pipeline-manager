@@ -242,7 +242,7 @@
             "Type": "Choice",
             "Choices": [
               {
-                "Next": "New workflow manager deployed",
+                "Next": "Workflow Run Update Event",
                 "Condition": "{% $states.input.hasChanged %}"
               }
             ],
@@ -250,31 +250,6 @@
           },
           "No change, skipping": {
             "Type": "Pass",
-            "End": true
-          },
-          "New workflow manager deployed": {
-            "Type": "Choice",
-            "Choices": [
-              {
-                "Next": "Workflow Run Update Event",
-                "Condition": "{% ${__new_workflow_manager_is_deployed__} %}"
-              }
-            ],
-            "Default": "Workflow Run State Change event (legacy)"
-          },
-          "Workflow Run State Change event (legacy)": {
-            "Type": "Task",
-            "Resource": "arn:aws:states:::events:putEvents",
-            "Arguments": {
-              "Entries": [
-                {
-                  "Detail": "{% /* https://try.jsonata.org/r0aCmiix- */\n$merge([\n  $workflowRunUpdateMapIter,\n  {\n    \"timestamp\": $states.context.State.EnteredTime,\n    /* Drop readsets from libraries */\n    \"libraries\": ( $workflowRunUpdateMapIter.libraries ~> | $ | {}, [\"readsets\"] | )\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
-                  "DetailType": "${__workflow_run_state_change_event_detail_type__}",
-                  "EventBusName": "${__event_bus_name__}",
-                  "Source": "${__stack_source__}"
-                }
-              ]
-            },
             "End": true
           },
           "Workflow Run Update Event": {

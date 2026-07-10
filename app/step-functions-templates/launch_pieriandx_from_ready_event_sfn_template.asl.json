@@ -369,21 +369,10 @@
           "JitterStrategy": "FULL"
         }
       ],
-      "Next": "Is New Workflow Manager Deployed",
+      "Next": "Generate Runnable Event",
       "Assign": {
         "workflowRunUpdateEventDetail": "{% $states.result.Payload.workflowRunUpdate %}"
       }
-    },
-    "Is New Workflow Manager Deployed": {
-      "Type": "Choice",
-      "Choices": [
-        {
-          "Next": "Generate Runnable Event",
-          "Condition": "{% ${__new_workflow_manager_is_deployed__} %}",
-          "Comment": "New Workflow Manager Deployed"
-        }
-      ],
-      "Default": "Generate Runnable Event (legacy)"
     },
     "Generate Runnable Event": {
       "Type": "Task",
@@ -416,21 +405,6 @@
         }
       ],
       "End": true
-    },
-    "Generate Runnable Event (legacy)": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::events:putEvents",
-      "Arguments": {
-        "Entries": [
-          {
-            "Detail": "{% $merge([\n  $workflowRunUpdateEventDetail,\n  {\n    \"timestamp\": $now()\n  }\n]) ~>\n/* Renamed libraries to linkedLibraries using the transform method */\n| $ | {\"linkedLibraries\": libraries}, [\"libraries\"] | ~>\n/* Renamed workflowName and workflowVersion using the transform method */\n| $ | {\"workflowName\": workflow.name, \"workflowVersion\": workflow.version}, [\"workflow\"] | %}",
-            "DetailType": "${__workflow_run_state_change_event_detail_type__}",
-            "EventBusName": "${__event_bus_name__}",
-            "Source": "${__event_source__}"
-          }
-        ]
-      },
-      "Next": "Enable Monitoring Rule"
     }
   },
   "QueryLanguage": "JSONata"

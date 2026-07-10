@@ -13,13 +13,13 @@ export function addLookUpBucket(scope: Construct, props: AddLookUpBucketProps) {
 
   // Add nag suppressions, while the bucket is not public,
   // It does not contain any private data
-  // AwsSolutions-S1 - We need to add this for the lambda to work
   NagSuppressions.addResourceSuppressions(
     s3Bucket,
     [
       {
         id: 'AwsSolutions-S1',
-        reason: 'We dont need server access logs for this bucket',
+        reason:
+          'Server access logs not required for the PierianDx lookup bucket; it contains only static SNOMED mapping reference data with no sensitive content',
       },
     ],
     true
