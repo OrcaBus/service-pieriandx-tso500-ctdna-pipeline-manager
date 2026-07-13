@@ -145,6 +145,23 @@ def launch_redcap_raw_lambda(library_id: str) -> pd.DataFrame:
     # Replace null values with NAs
     redcap_raw_df = redcap_raw_df.replace({None: pd.NA, "": pd.NA})
 
+    # Subset columns for redcap raw df
+    redcap_raw_df = redcap_raw_df[
+        [
+            "diseaseId",
+            "requestingPhysicianFirstName",
+            "requestingPhysicianLastName",
+            "libraryId",
+            "dateCollected",
+            "timeCollected",
+            "dateReceived",
+            "patientUrn"
+        ]
+    ]
+
+    # Drop duplicate rows
+    redcap_raw_df.drop_duplicates(inplace=True)
+
     return redcap_raw_df
 
 
@@ -206,6 +223,14 @@ def launch_redcap_label_lambda(library_id: str) -> pd.DataFrame:
             "pierianMetadataComplete"
         ]
     ]
+
+    # Only select samples where pierianMetadataComplete is 'Complete'
+    redcap_label_df = redcap_label_df.query(
+        "pierianMetadataComplete=='Complete'"
+    )
+
+    # Drop duplicate rows
+    redcap_label_df.drop_duplicates(inplace=True)
 
     return redcap_label_df
 
@@ -297,6 +322,7 @@ def handler(event, context) -> Dict:
         sleep(10)
     logger.info("Redcap lambda warmup complete!")
 
+    # Get inputs
     library_id = event['libraryId']
 
     # Return
@@ -310,58 +336,3 @@ def handler(event, context) -> Dict:
             "redcapData": None,
             "inRedcap": False
         }
-
-
-# if __name__ == '__main__':
-#     # Or 'umccr-staging' / 'umccr-production'
-#     environ['AWS_PROFILE'] = 'umccr-development'
-#     environ['AWS_REGION'] = 'ap-southeast-2'
-#     # Or 'redcap-apis-stg-lambda-function' / 'redcap-apis-prod-lambda-function'
-#     environ['REDCAP_LAMBDA_FUNCTION_NAME'] = 'redcap-apis-dev-lambda-function'
-#     print(
-#         json.dumps(
-#             handler(
-#                 event={
-#                     "library_id": 'L2401380'
-#                 },
-#                 context=None
-#             ),
-#             indent=4
-#         )
-#     )
-
-
-# if __name__ == '__main__':
-#     # Or 'umccr-staging' / 'umccr-production'
-#     environ['AWS_PROFILE'] = 'umccr-development'
-#     environ['AWS_REGION'] = 'ap-southeast-2'
-#     # Or 'redcap-apis-stg-lambda-function' / 'redcap-apis-prod-lambda-function'
-#     environ['REDCAP_LAMBDA_FUNCTION_NAME'] = 'redcap-apis-dev-lambda-function'
-#     print(
-#         json.dumps(
-#             handler(
-#                 event={
-#                     "library_id": "L2401529"
-#                 },
-#                 context=None
-#             ),
-#             indent=4
-#         )
-#     )
-#
-# # {
-# #     "redcap_data": {
-# #         "disease_id": 254637007,
-# #         "requesting_physicians_first_name": "XXX",
-# #         "requesting_physicians_last_name": "XXX",
-# #         "library_id": "L2401380",
-# #         "date_collected": "2024-09-06T23:00:00+1000",
-# #         "date_received": "2024-09-06T00:00:00+1000",
-# #         "patient_urn": "0038-61302",
-# #         "sample_type": "Patient Care Sample",
-# #         "disease_name": "Non-small cell lung cancer",
-# #         "gender": "Unknown",
-# #         "pierian_metadata_complete": "Complete"
-# #     },
-# #     "in_redcap": true
-# # }
