@@ -159,8 +159,8 @@ def launch_redcap_raw_lambda(library_id: str) -> pd.DataFrame:
         ]
     ]
 
-    # Drop duplicate rows
-    redcap_raw_df.drop_duplicates(inplace=True)
+    # Drop duplicate rows (and reset index so downstream index-based operations remain valid)
+    redcap_raw_df = redcap_raw_df.drop_duplicates().reset_index(drop=True)
 
     return redcap_raw_df
 
@@ -225,12 +225,12 @@ def launch_redcap_label_lambda(library_id: str) -> pd.DataFrame:
     ]
 
     # Only select samples where pierianMetadataComplete is 'Complete'
-    redcap_label_df = redcap_label_df.query(
-        "pierianMetadataComplete=='Complete'"
+    # Deduplicate and reset index so downstream index-based operations remain valid
+    redcap_label_df = (
+        redcap_label_df.query("pierianMetadataComplete=='Complete'")
+        .drop_duplicates()
+        .reset_index(drop=True)
     )
-
-    # Drop duplicate rows
-    redcap_label_df.drop_duplicates(inplace=True)
 
     return redcap_label_df
 
