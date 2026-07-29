@@ -122,7 +122,8 @@ jobs:
         run: |
           set -o pipefail
           # Try a standard upgrade to resolve vulnerabilities
-          pnpm upgrade
+          # --ignore-scripts avoids running lifecycle hooks (e.g. prepare: pre-commit install)
+          pnpm upgrade --ignore-scripts
 
           # Re-run audit to see if upgrade resolved issues
           if pnpm audit --prod 2>&1 | tee audit-after-upgrade.txt; then
@@ -140,7 +141,7 @@ jobs:
           pnpm audit --fix 2>&1 | tee audit-fix-output.txt || true
 
           # Reinstall with the new overrides
-          pnpm install
+          pnpm install --ignore-scripts
 
           # Verify the fix resolved the issues
           if pnpm audit --prod 2>&1 | tee audit-after-fix.txt; then
