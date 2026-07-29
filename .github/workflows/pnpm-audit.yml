@@ -27,6 +27,9 @@ jobs:
 
       - run: corepack enable
 
+      - name: Install yq
+        uses: mikefarah/yq@master
+
       - name: Check existing open audit PRs
         id: check-existing
         env:
@@ -137,7 +140,13 @@ jobs:
         if: steps.upgrade.outputs.upgrade_fixed == 'false'
         run: |
           set -o pipefail
-          # Use pnpm audit --fix=override to add overrides for vulnerable transitive deps
+          # Remove existing overrides to prevent stale/conflicting ranges accumulating
+          if [ -f pnpm-workspace.yaml ]; then yq -i 'del(.overrides)' pnpm-workspace.yaml; fi
+
+          # Reinstall to regenerate lockfile without old overrides
+          pnpm install --ignore-scripts
+
+          # Use pnpm audit --fix=override to add fresh overrides for vulnerable transitive deps
           pnpm audit --fix=override 2>&1 | tee audit-fix-output.txt || true
 
           # Reinstall with the new overrides
