@@ -224,6 +224,7 @@ jobs:
             - Merge when satisfied
           labels: security,dependencies
           delete-branch: true
+          sign-commits: true
 
       - name: Create issue for unresolved vulnerabilities
         if: |
