@@ -132,13 +132,13 @@ jobs:
             echo "upgrade_fixed=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Attempt pnpm audit --fix (overrides)
+      - name: Attempt pnpm audit --fix=override
         id: audit-fix
         if: steps.upgrade.outputs.upgrade_fixed == 'false'
         run: |
           set -o pipefail
-          # Use pnpm audit --fix to add overrides for vulnerable transitive deps
-          pnpm audit --fix 2>&1 | tee audit-fix-output.txt || true
+          # Use pnpm audit --fix=override to add overrides for vulnerable transitive deps
+          pnpm audit --fix=override 2>&1 | tee audit-fix-output.txt || true
 
           # Reinstall with the new overrides
           pnpm install --ignore-scripts
@@ -159,7 +159,7 @@ jobs:
           if [[ "${{ steps.upgrade.outputs.upgrade_fixed }}" == "true" ]]; then
             echo "method=pnpm upgrade" >> "$GITHUB_OUTPUT"
           else
-            echo "method=pnpm audit --fix (overrides)" >> "$GITHUB_OUTPUT"
+            echo "method=pnpm audit --fix=override" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create tracking issue
@@ -257,7 +257,7 @@ jobs:
 
           ### Remediation attempts
           1. ❌ \`pnpm upgrade\` — did not resolve all issues
-          2. ❌ \`pnpm audit --fix\` (overrides) — did not resolve all issues
+          2. ❌ \`pnpm audit --fix=override\` — did not resolve all issues
 
           ### Audit output
           \`\`\`
