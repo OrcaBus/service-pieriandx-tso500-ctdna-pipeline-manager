@@ -144,13 +144,13 @@ jobs:
           if [ -f pnpm-workspace.yaml ]; then yq -i 'del(.overrides)' pnpm-workspace.yaml; fi
 
           # Reinstall to regenerate lockfile without old overrides
-          pnpm install --ignore-scripts
+          pnpm install --no-frozen-lockfile --ignore-scripts
 
           # Use pnpm audit --fix=override to add fresh overrides for vulnerable transitive deps
           pnpm audit --fix=override 2>&1 | tee audit-fix-output.txt || true
 
           # Reinstall with the new overrides
-          pnpm install --ignore-scripts
+          pnpm install --no-frozen-lockfile --ignore-scripts
 
           # Verify the fix resolved the issues
           if pnpm audit 2>&1 | tee audit-after-fix.txt; then
