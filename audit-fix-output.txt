@@ -1,0 +1,10 @@
+1 overrides were added to pnpm-workspace.yaml to fix vulnerabilities.
+Run "pnpm install" to apply the fixes.
+
+The added overrides:
+{
+  "brace-expansion@<=5.0.7": "^5.0.8"
+}
+
+1 entries were added to minimumReleaseAgeExclude to allow installing the patched versions:
+brace-expansion@5.0.8
