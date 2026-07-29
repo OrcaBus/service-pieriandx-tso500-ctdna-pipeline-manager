@@ -1,0 +1,24 @@
+┌─────────────────────┬────────────────────────────────────────────────────────┐
+│ high                │ aws-cdk-lib: OS Command Injection in NodejsFunction    │
+│                     │ Docker Bundling                                        │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Package             │ aws-cdk-lib                                            │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Vulnerable versions │ <2.260.0                                               │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Patched versions    │ >=2.260.0                                              │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ Paths               │ .>@aws-cdk/aws-lambda-python-alpha>aws-cdk-lib         │
+│                     │                                                        │
+│                     │ .>@orcabus/platform-cdk-constructs>@aws-cdk/aws-       │
+│                     │ lambda-python-alpha>aws-cdk-lib                        │
+│                     │                                                        │
+│                     │ .>@orcabus/platform-cdk-constructs>aws-cdk-lib         │
+│                     │                                                        │
+│                     │ ... Found 4 paths, run `pnpm why aws-cdk-lib` for more │
+│                     │ information                                            │
+├─────────────────────┼────────────────────────────────────────────────────────┤
+│ More info           │ https://github.com/advisories/GHSA-vcrf-j523-4mrf      │
+└─────────────────────┴────────────────────────────────────────────────────────┘
+1 vulnerabilities found
+Severity: 1 high
