@@ -91,6 +91,9 @@ jobs:
               - 'test/**'
               - 'Makefile'
               - '.github/**'
+              - 'cdk.json'
+              - 'tsconfig.json'
+              - 'jest.config.*'
   test-iac:
     runs-on: ubuntu-22.04-arm
     # Template service base is broken with
