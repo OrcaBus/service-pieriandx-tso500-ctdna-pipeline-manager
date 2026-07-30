@@ -130,6 +130,10 @@ jobs:
             echo "Lint/security checks failed"
             exit 1
           fi
+          if [[ "${{ needs.check-changes.result }}" == "failure" ]]; then
+            echo "Change detection failed"
+            exit 1
+          fi
           if [[ "${{ needs.test-iac.result }}" == "failure" ]]; then
             echo "Tests failed"
             exit 1
