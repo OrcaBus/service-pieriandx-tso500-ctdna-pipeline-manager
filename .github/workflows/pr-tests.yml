@@ -126,16 +126,16 @@ jobs:
     steps:
       - name: Check results
         run: |
-          if [[ "${{ needs.pre-commit-lint-security.result }}" == "failure" ]]; then
-            echo "Lint/security checks failed"
+          if [[ "${{ needs.pre-commit-lint-security.result }}" != "success" ]]; then
+            echo "Lint/security checks did not succeed (result: ${{ needs.pre-commit-lint-security.result }})"
             exit 1
           fi
-          if [[ "${{ needs.check-changes.result }}" == "failure" ]]; then
-            echo "Change detection failed"
+          if [[ "${{ needs.check-changes.result }}" != "success" ]]; then
+            echo "Change detection did not succeed (result: ${{ needs.check-changes.result }})"
             exit 1
           fi
-          if [[ "${{ needs.test-iac.result }}" == "failure" ]]; then
-            echo "Tests failed"
+          if [[ "${{ needs.test-iac.result }}" != "success" && "${{ needs.test-iac.result }}" != "skipped" ]]; then
+            echo "Tests did not succeed (result: ${{ needs.test-iac.result }})"
             exit 1
           fi
           echo "CI passed (tests passed or were skipped)"
