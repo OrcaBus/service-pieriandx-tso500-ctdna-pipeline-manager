@@ -202,6 +202,10 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           branch: chore/pnpm-audit-fix-${{ github.run_id }}
+          add-paths: |
+            package.json
+            pnpm-workspace.yaml
+            pnpm-lock.yaml
           commit-message: 'chore: fix security vulnerabilities via ${{ steps.fix-method.outputs.method }}'
           title: 'chore: fix pnpm audit vulnerabilities (${{ github.run_id }})'
           body: |
