@@ -2,8 +2,8 @@ name: pnpm Audit & Auto-fix
 
 on:
   schedule:
-    # Run daily at 06:00 UTC
-    - cron: '0 6 * * *'
+    # Run daily at 00:05 UTC (10:05 AEST) — offset to avoid caching delays on CVE publication
+    - cron: '5 0 * * *'
   workflow_dispatch: {}
 
 permissions:
