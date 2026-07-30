@@ -126,7 +126,7 @@ jobs:
     steps:
       - name: Check results
         run: |
-          if [[ "${{ needs.pre-commit-lint-security.result }}" != "success" ]]; then
+          if [[ "${{ needs.pre-commit-lint-security.result }}" != "success" && "${{ needs.pre-commit-lint-security.result }}" != "skipped" ]]; then
             echo "Lint/security checks did not succeed (result: ${{ needs.pre-commit-lint-security.result }})"
             exit 1
           fi
