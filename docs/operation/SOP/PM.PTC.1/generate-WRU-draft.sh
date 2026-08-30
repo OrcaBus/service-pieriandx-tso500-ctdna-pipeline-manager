@@ -5,14 +5,23 @@ set -euo pipefail
 
 # Globals
 LAMBDA_FUNCTION_NAME="WruDraftValidator"
+HOSTNAME=""
 
 # CLI Defaults
 FORCE=false  # Use --force to set to true
+COMMENT=""  # Use -c or --comment to set a comment to be added to the payload
+SAVE_DRAFT_PAYLOAD=""
 
 # Workflow constants
 WORKFLOW_NAME="pieriandx-tso500-ctdna"
 WORKFLOW_VERSION="2.6.0"
 PAYLOAD_VERSION="2025.09.25"
+
+# SOP constants
+SOP_VERSION="2026.08.30"
+SOP_ID="PM.PTC.1"
+GITHUB_REPO="OrcaBus/service-pieriandx-tso500-ctdna-pipeline-manager"
+THIS_SCRIPT_PATH="docs/operation/SOP/${SOP_ID}/generate-WRU-draft.sh"
 
 # Library ID array
 LIBRARY_ID_ARRAY=()
@@ -23,33 +32,173 @@ echo_stderr(){
 }
 
 print_usage(){
+  : '
+  Print usage
+  '
+  local hostname
+  if ! hostname="$(get_hostname_from_ssm 2>/dev/null)"; then
+    hostname="<aws_account_prefix>.umccr.org"
+  fi
+
   echo "
 generate-WRU-draft.sh [-h | --help]
 generate-WRU-draft.sh (library_id)...
-                  [-f | --force]
-                  [--workflow-version <workflow_version>]
+                      (-c | --comment <comment>)
+                      [-f | --force]
+                      [--save-draft-payload <output_file>]
+                      [--workflow-version <workflow_version>]
 
 Description:
 Run this script to generate a draft WorkflowRunUpdate event for the specified library IDs.
+
+The PierianDx TSO500 ctDNA draft is intentionally minimal (workflow + libraries only). The
+populate-draft-data step function is responsible for enriching the draft with the metadata
+required by the PierianDx CGW backend, so no engine-parameter arguments are required here.
 
 Positional arguments:
   library_id:   One or more library IDs to link to the WorkflowRunUpdate event.
 
 Keyword arguments:
-  -h | --help:               Print this help message and exit.
-  -f | --force:              Don't confirm before pushing the event to EventBridge.
-  --workflow-version:        (Optional) The workflow version to use, defaults to ${WORKFLOW_VERSION},
+  -h | --help                              Print this help message and exit.
+  -c | --comment='A descriptive comment'   (Required) A comment to add to the payload, which will be visible in the workflow run details in OrcaUI.
+  -f | --force                             (Optional) Don't confirm before pushing the event to EventBridge.
+  --save-draft-payload=<output_file>       (Optional) Save the generated draft event to a local file <output_file> after pushing to event bridge for record purposes.
+  --workflow-version=<workflow_version>    (Optional) The workflow version to use, defaults to ${WORKFLOW_VERSION}.
 
 Environment:
+  PORTAL_TOKEN: (Required) Your personal portal token from https://portal.${hostname}/
   AWS_PROFILE:  (Optional) The AWS CLI profile to use for authentication.
   AWS_REGION:   (Optional) The AWS region to use for AWS CLI commands.
 
+Binaries:
+  - aws CLI should be installed and configured with appropriate credentials and region.
+    - install from https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+  - jq should be installed for JSON parsing
+    - from https://github.com/jqlang/jq
+  - semver for comparing versions
+    - from https://github.com/fsaintjacques/semver-tool
+  - curl should be installed for making API requests.
+    - from https://curl.se/download.html
+  - openssl should be available for generating random portal run ids.
+    - this should be installed by default on most systems, but if not it can be installed from https://www.openssl.org/source/
+  - awk should be available for parsing command output.
+    - this should be installed by default on most systems. If not, it can be installed from https://www.gnu.org/software/gawk/
+
 Example usage:
-bash generate-WRU-draft.sh library_id
+bash generate-WRU-draft.sh library_id \\
+  --comment 'Initial test of WRU event generation script'
+bash generate-WRU-draft.sh library_id \\
+  --comment 'Redriving analysis after failure' \\
+  --save-draft-payload library_id__draft_payload.json
 "
 }
 
+compare_script_version_to_repo(){
+  : '
+  Compare the version of this script to the version in the repo, and print a warning if they are different
+  If anywhere along the way fails, return unknown
+  '
+  repo_script_version="$( \
+    (
+      # Read the document from the main branch
+      curl --silent --fail --location --show-error \
+        --header "Accept: text/html" \
+        --url "https://raw.githubusercontent.com/${GITHUB_REPO}/refs/heads/main/${THIS_SCRIPT_PATH}" | \
+      ( \
+        # Read through the whole document to prevent curl erroring out
+        tac | tac \
+      ) | \
+      (
+        # Get the first occurence with grep -m1 (SOP_VERSION="YYYY.MM.DD")
+        # Remove the SOP_VERSION= prefix ("YYYY.MM.DD")
+        # Remove quotes (YYYY.MM.DD)
+        grep -m1 "SOP_VERSION=" | \
+        sed 's/^SOP_VERSION=//' | \
+        jq --raw-output
+      ) \
+    ) || echo "unknown"
+  )"
+
+  if [[ "${SOP_VERSION}" != "${repo_script_version}" ]]; then
+    echo_stderr "Warning: This script version (${SOP_VERSION}) is different from the version in the repo (${repo_script_version})."
+    echo_stderr "         Consider refetching this script from https://github.com/${GITHUB_REPO}/blob/main/${THIS_SCRIPT_PATH}"
+  fi
+}
+
+check_binaries(){
+  : '
+  Check that required binaries are installed
+  '
+  for binary in aws semver jq curl openssl awk; do
+    if ! command -v "${binary}" > /dev/null 2>&1; then
+      echo_stderr "Error: ${binary} is not installed. Please install ${binary} and try again. Exiting."
+      return 1
+    fi
+  done
+
+  # Check that jq is version 1.7 or higher, as we use the fromjson function which was added in 1.7
+  jq_version="$(jq --version | cut -d'-' -f2)"
+  if [[ "${jq_version}" =~ ^1.\d$ && ! "${jq_version}" == "1.7" ]]; then
+    echo_stderr "Error: jq version 1.7 or higher is required. Please update jq and try again. Exiting."
+    return 1
+  fi
+  # After version 1.7, jq changed their versioning to semver, so we can use semver to compare versions
+  if [[ ! "$(semver compare "${jq_version}" "${MIN_REQUIREMENTS["jq"]}")" -ge 0 ]]; then
+    echo_stderr "Error: jq version ${MIN_REQUIREMENTS["jq"]} or higher is required. Please update jq and try again. Exiting."
+    return 1
+  fi
+
+  # Check aws cli version is 2.0.0 or higher, as we use the --cli-binary-format option which was added in 2.0.0
+  aws_version="$(aws --version 2>&1 | awk '{print $1}' | cut -d'/' -f2)"
+  if [[ ! "$(semver compare "${aws_version}" "${MIN_REQUIREMENTS["aws"]}")" -ge 0 ]]; then
+    echo_stderr "Error: AWS CLI version ${MIN_REQUIREMENTS["aws"]} or higher is required. Please update AWS CLI and try again. Exiting."
+    return 1
+  fi
+
+  # Check curl version is 7.76.0 or higher, as we use the --fail-with-body option which was added in 7.76.0
+  curl_version="$(curl --version | head -n1 | awk '{print $2}')"
+  if [[ ! "$(semver compare "${curl_version}" "${MIN_REQUIREMENTS["curl"]}")" -ge 0 ]]; then
+    echo_stderr "Error: curl version ${MIN_REQUIREMENTS["curl"]} or higher is required. Please update curl and try again. Exiting."
+    return 1
+  fi
+}
+
+get_email_from_portal_token(){
+  : '
+  Get the email to use from the portal JWT
+  We use this to make a comment on the workflow run in the OrcaUI
+  once the event is pushed to EventBridge and the workflow run is created,
+  to indicate who created the workflow run
+  '
+  jq --raw-output \
+    --null-input \
+    --arg portalToken "${PORTAL_TOKEN}" \
+    '
+      (
+        # Get the middle chunk of the portal jwt token
+        $portalToken | split(".")[1] |
+        # Decode base64
+        @base64d |
+        # Load json
+        fromjson
+      ) |
+      .email
+    '
+}
+
 get_hostname_from_ssm(){
+  : '
+  Get the hostname from SSM Parameter Store
+  '
+  # Cache the hostname in a global variable to
+  # avoid multiple calls to SSM Parameter Store
+  if [[ -n "${HOSTNAME}" ]]; then
+    echo "${HOSTNAME}"
+    return
+  fi
+
+  # Get the hostname from SSM Parameter Store and
+  # cache it in the HOSTNAME global variable
   aws ssm get-parameter \
     --name "/hosted_zone/umccr/name" \
     --output json | \
@@ -57,19 +206,45 @@ get_hostname_from_ssm(){
     '.Parameter.Value'
 }
 
-get_orcabus_token(){
-  aws secretsmanager get-secret-value \
-    --secret-id orcabus/token-service-jwt \
-    --output json \
-    --query SecretString | \
-  jq --raw-output \
-    'fromjson | .id_token'
+get_aws_account_prefix(){
+  local aws_account_id
+  aws_account_id="$( \
+    aws sts get-caller-identity --output json --query "Account" | \
+    jq --raw-output \
+  )"
+  echo "${PREFIX_BY_AWS_ACCOUNT_ID[${aws_account_id}]:-"unknown_aws_account_prefix"}"
+}
+
+get_cognito_user_pool_id_prefix(){
+  local cognito_user_pool_id
+  cognito_user_pool_id="$( \
+    jq --raw-output \
+      --null-input \
+      --arg portalToken "${PORTAL_TOKEN}" \
+      '
+        (
+          # Get the middle chunk of the portal jwt token
+          $portalToken | split(".")[1] |
+          # Decode base64
+          @base64d |
+          # Load json
+          fromjson
+        ) |
+        .iss |
+        split("/")[-1]
+      ' \
+  )"
+  echo "${COGNITO_USER_POOL_ID_BY_PREFIX[${cognito_user_pool_id}]:-"unknown_cognito_user_pool_id"}"
 }
 
 get_library_obj_from_library_id(){
+  : '
+  Get the library object (libraryId and orcabusId) from the library id
+  '
   local library_id="$1"
   curl --silent --fail --show-error --location \
-    --header "Authorization: Bearer $(get_orcabus_token)" \
+    --header "Accept: application/json" \
+    --header "Authorization: Bearer ${PORTAL_TOKEN}" \
     --url "https://metadata.$(get_hostname_from_ssm)/api/v1/library?libraryId=${library_id}" | \
   jq --raw-output \
     '
@@ -110,7 +285,8 @@ get_workflow(){
   curl --silent --fail --show-error --location \
     --request GET \
     --get \
-    --header "Authorization: Bearer $(get_orcabus_token)" \
+    --header "Accept: application/json" \
+    --header "Authorization: Bearer ${PORTAL_TOKEN}" \
     --url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflow" \
     --data "$( \
       jq \
@@ -141,7 +317,8 @@ get_workflow_run(){
   curl --silent --fail --show-error --location \
     --request GET \
     --get \
-    --header "Authorization: Bearer $(get_orcabus_token)" \
+    --header "Accept: application/json" \
+    --header "Authorization: Bearer ${PORTAL_TOKEN}" \
     --url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflowrun?portalRunId=${portal_run_id}" | \
   jq --compact-output --raw-output \
     '
@@ -153,6 +330,33 @@ get_workflow_run(){
     '
 }
 
+generate_workflow_comment(){
+  : '
+  Generate a comment on the workflow run
+  '
+  local workflow_run_orcabus_id="$1"
+  local email_address="$2"
+  curl --silent --fail-with-body --location --show-error \
+    --request "POST" \
+    --header "Accept: application/json" \
+    --header "Authorization: Bearer ${PORTAL_TOKEN}" \
+    --header "Content-Type: application/json" \
+    --data "$(
+      jq --null-input --raw-output \
+        --arg emailAddress "${email_address}" \
+        --arg sopId "${SOP_ID}" \
+        --arg sopVersion "${SOP_VERSION}" \
+        --arg comment "${COMMENT}" \
+        '
+          {
+            "text": "Pipeline executed manually via SOP \($sopId)/\($sopVersion) -- \($comment)",
+            "createdBy": $emailAddress
+          }
+        '
+    )" \
+    --url "https://workflow.$(get_hostname_from_ssm)/api/v1/workflowrun/${workflow_run_orcabus_id}/comment/"
+}
+
 # Get args
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -161,9 +365,27 @@ while [[ $# -gt 0 ]]; do
       print_usage
       exit 0
       ;;
+    # Comment
+    -c|--comment)
+      COMMENT="$2"
+      shift 2
+      ;;
+    -c=*|--comment=*)
+      COMMENT="${1#*=}"
+      shift
+      ;;
     # Force boolean
     -f|--force)
       FORCE=true
+      shift
+      ;;
+    # Save draft payload to file
+    --save-draft-payload)
+      SAVE_DRAFT_PAYLOAD="$2"
+      shift 2
+      ;;
+    --save-draft-payload=*)
+      SAVE_DRAFT_PAYLOAD="${1#*=}"
       shift
       ;;
     # Workflow version
@@ -183,10 +405,101 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Check required environment variables
+if [[ -z "${PORTAL_TOKEN:-}" ]]; then
+  echo_stderr "Error: PORTAL_TOKEN environment variable is not set. Exiting."
+  print_usage
+  exit 1
+fi
+
+# Check comment is provided
+if [[ -z "${COMMENT}" ]]; then
+  echo_stderr "Error: Comment is required. Please provide a comment using the -c or --comment flag. Exiting."
+  print_usage
+  exit 1
+fi
+
 # Ensure at least one library ID was provided
 if [ ${#LIBRARY_ID_ARRAY[@]} -eq 0 ]; then
   echo_stderr "Error: At least one library ID must be provided."
   print_usage
+  exit 1
+fi
+
+# Check save draft file path is valid if provided
+if [[ -n "${SAVE_DRAFT_PAYLOAD}" ]]; then
+  # Check parent directory exists
+  if [[ ! -d "$(dirname "${SAVE_DRAFT_PAYLOAD}")" ]]; then
+    echo_stderr "Error: The parent directory for the file path provided for --save-draft-payload '${SAVE_DRAFT_PAYLOAD}' "
+    echo_stderr "       does not exist. Please provide a valid file path with an existing parent directory. Exiting."
+    exit 1
+  fi
+  if [[ -e "${SAVE_DRAFT_PAYLOAD}" ]]; then
+    echo_stderr "Error: The file path provided for --save-draft-payload already exists. "
+    echo_stderr "       Please provide a file path that does not already exist to avoid overwriting. Exiting."
+    exit 1
+  fi
+fi
+
+# Check AWS CLI configuration
+if ! aws sts get-caller-identity --output json > /dev/null 2>&1; then
+  echo_stderr "Error: AWS CLI is not configured properly. Please configure your AWS CLI with appropriate credentials and region. Exiting."
+  exit 1
+fi
+
+# Set hostname
+HOSTNAME="$(get_hostname_from_ssm)"
+
+# Check script version
+compare_script_version_to_repo
+
+# Check that we're running bash and it's version 4 or higher before declaring associative arrays
+if [[ ! -v BASH_VERSION || "${BASH_VERSINFO[0]}" -lt 4 ]]; then
+  echo_stderr "Error! This script is not being run with bash, or bash version is less than 4.0. Exiting"
+  print_usage
+  exit 1
+fi
+
+# SCRIPT BINARY VERSION MIN REQUIREMENTS
+declare -A MIN_REQUIREMENTS=(
+  ["jq"]="1.7.0"     # For if without else options
+  ["aws"]="2.0.0"    # Because what are you doing still on V1?
+  ["curl"]="7.76.0"  # For --fail-with-body option
+)
+
+# Check binaries are installed
+if ! check_binaries; then
+  echo_stderr "Error: One or more required binaries are not installed. Please install the required binaries and try again. Exiting."
+  print_usage
+  exit 1
+fi
+
+# AWS Account ID by prefix
+declare -A PREFIX_BY_AWS_ACCOUNT_ID=(
+  ["843407916570"]="dev"
+  ["455634345446"]="stg"
+  ["472057503814"]="prod"
+)
+declare -A COGNITO_USER_POOL_ID_BY_PREFIX=(
+  ["ap-southeast-2_iWOHnsurL"]="dev"
+  ["ap-southeast-2_wWDrdTyzP"]="stg"
+  ["ap-southeast-2_HFrQ3aWm8"]="prod"
+)
+
+# Confirm that the aws account id associated with the credentials
+# Matches the cognito user pool id associated with the portal token,
+# to help catch users who have multiple AWS profiles configured and are using the wrong one
+if [[ "$(get_aws_account_prefix)" != "$(get_cognito_user_pool_id_prefix)" ]]; then
+  echo_stderr "Warning: The AWS account prefix associated with your AWS credentials ($(get_aws_account_prefix)) "
+  echo_stderr "         does not match the expected prefix for the portal token you provided ($(get_cognito_user_pool_id_prefix))."
+  echo_stderr "         This may cause API calls to fail due to authentication issues."
+  echo_stderr "         Please check that you are using the correct AWS profile and that your portal token is valid."
+fi
+
+# Get email address upfront
+if ! email_address="$(get_email_from_portal_token)"; then
+  echo_stderr "Error: Failed to extract email address from portal token."
+  echo_stderr "       The comment will not be created. Please check that your PORTAL_TOKEN is valid."
   exit 1
 fi
 
@@ -201,13 +514,35 @@ workflow="$( \
 )"
 echo_stderr "Using workflow: $(jq --raw-output '.orcabusId' <<< "${workflow}")"
 
+# Collecting relevant libraries
+echo_stderr "Collecting libraries from metadata manager"
+libraries="$(get_linked_libraries)"
+# libraries are a list of objects with libraryId and orcabusId fields
+# Ensure no object in the list is empty
+if [[ -z "${libraries}" || "$(jq 'length' <<< "${libraries}")" == 0 ]]; then
+  echo_stderr "Error: No valid libraries found for the provided library IDs. Exiting."
+  exit 1
+# Check length of libraries matches length of library id array, to catch cases where some library ids were invalid
+elif [[ "$(jq 'length' <<< "${libraries}")" -ne "${#LIBRARY_ID_ARRAY[@]}" ]]; then
+  echo_stderr "Error: One or more library IDs provided are invalid and did not return a library object."
+  echo_stderr "       Please check the provided library IDs. Exiting."
+  exit 1
+elif [[ "$(jq 'map(select(.libraryId == null or .orcabusId == null)) | length' <<< "${libraries}")" -gt 0 ]]; then
+  echo_stderr "Error: One or more library objects are null. Please check the provided library IDs. Exiting."
+  exit 1
+else
+  echo_stderr "Found $(jq 'length' <<< "${libraries}") linked libraries"
+fi
+
 # Generate the event
+# The PierianDx draft is intentionally minimal: the populate-draft-data step function
+# enriches it with the metadata the PierianDx CGW backend requires.
 lambda_payload="$( \
   jq --null-input --raw-output \
     --argjson workflow "${workflow}" \
     --arg payloadVersion "${PAYLOAD_VERSION}" \
     --arg portalRunId "${portal_run_id}" \
-    --argjson libraries "$(get_linked_libraries)" \
+    --argjson libraries "${libraries}" \
     '
       {
         "status": "DRAFT",
@@ -221,10 +556,9 @@ lambda_payload="$( \
 )"
 
 # Confirm before pushing the event
+echo_stderr "Send the following payload to the lambda object:"
+jq --raw-output <<< "${lambda_payload}" 1>&2
 if [[ "${FORCE}" == "false" ]]; then
-  echo_stderr "Send the following payload to the lambda object:"
-  jq --raw-output <<< "${lambda_payload}" 1>&2
-
   read -r -p 'Confirm to push this event to EventBridge? (y/n): ' confirm_push
   if [[ ! "${confirm_push}" =~ ^[Yy]$ ]]; then
     echo_stderr "Aborting event push."
@@ -232,9 +566,20 @@ if [[ "${FORCE}" == "false" ]]; then
   fi
 fi
 
+# Saving the draft event to a local file if the --save-draft-payload flag is provided, for record purposes
+if [[ -n "${SAVE_DRAFT_PAYLOAD}" ]]; then
+  echo_stderr "Saving the generated draft event to ${SAVE_DRAFT_PAYLOAD}"
+  jq --raw-output <<< "${lambda_payload}" > "${SAVE_DRAFT_PAYLOAD}"
+fi
+
+# Set the trap
+LAMBDA_TMP_DIR="$(mktemp -d "LAMBDA_TMP_DIR_XXXXXX")"
+trap 'rm -rf "${LAMBDA_TMP_DIR}"' EXIT
+
 # Push the event to EventBridge
-mkfifo lambda_data_pipe
-errors_json="$(mktemp "errors.XXXXXX.json")"
+LAMBDA_DATA_PIPE="${LAMBDA_TMP_DIR}/lambda_data_pipe"
+mkfifo "${LAMBDA_DATA_PIPE}"
+errors_json="$(mktemp -p "${LAMBDA_TMP_DIR}" "errors.XXXXXX.json")"
 echo_stderr "Pushing the draft event for portalRunId ${portal_run_id} via WRU Validation Lambda Function"
 aws lambda invoke \
   --function-name "$(get_lambda_function_name)" \
@@ -242,7 +587,7 @@ aws lambda invoke \
   --cli-binary-format raw-in-base64-out \
   --no-cli-pager \
   --invocation-type 'RequestResponse' \
-  lambda_data_pipe 1>/dev/null & \
+  "${LAMBDA_DATA_PIPE}" 1>/dev/null & \
 jq --raw-output \
   '
     if .statusCode != 200 then
@@ -251,23 +596,38 @@ jq --raw-output \
       empty
     end
   ' \
-  < lambda_data_pipe \
+  < "${LAMBDA_DATA_PIPE}" \
   > "${errors_json}" & \
 wait
-rm lambda_data_pipe
 
+# Check if there were any errors returned from the Lambda invocation
 if [[ -s "${errors_json}" ]]; then
   echo_stderr "Error pushing event to Lambda Function:"
   jq --raw-output '.' < "${errors_json}" 1>&2
-  rm "${errors_json}"
+  rm -rf "${LAMBDA_TMP_DIR}"
   exit 1
 else
-  rm "${errors_json}"
+  rm -rf "${LAMBDA_TMP_DIR}"
 fi
 
-echo_stderr "Waiting for the workflow run to be registered by the workflow manager"
+# Remove trap
+trap - EXIT
 
+# Now wait for the workflow run to be registered by the workflow manager,
+# which should be done within a minute or two after pushing the event to EventBridge,
+# and get the workflow run object, which contains the Orcabus ID that we will use to link the
+# workflow run to the comment we will create in the next step
+echo_stderr "Waiting for the workflow run to be registered by the workflow manager"
+max_attempts=6  # 1 minute with 10-second intervals
+attempts=0
 while :; do
+  # Check if we've exceeded max attempts
+  if [[ "${attempts}" -ge "${max_attempts}" ]]; then
+    echo_stderr "Exceeded maximum attempts (${max_attempts}) to check for workflow run registration"
+    exit 1
+  fi
+
+  # Get the workflow run object
   workflow_run_object="$( \
     get_workflow_run "${portal_run_id}"
   )"
@@ -282,7 +642,18 @@ while :; do
     sleep 10
   fi
 
+  # Increment attempts
+  attempts=$((attempts + 1))
 done
 
+echo_stderr "Generating workflow comment"
+if ! comment_response="$(generate_workflow_comment "${workflow_run_orcabus_id}" "${email_address}")"; then
+  echo_stderr "Warning: Failed to generate comment on workflow run."
+  echo_stderr "         Please check that your PORTAL_TOKEN is valid and has permission to comment on the workflow run. "
+  echo_stderr "         And contact the script author if the issue persists. The workflow run has been created successfully,"
+  echo_stderr "         but the comment indicating who created the workflow run and why will be missing."
+  echo_stderr "Error details: $(jq -rc <<< "${comment_response}")"
+fi
+
 echo_stderr "Workflow Run Creation Event complete!"
-echo_stderr "Please head to 'https://orcaui.$(get_hostname_from_ssm)/runs/workflow/${workflow_run_orcabus_id}' to track the status of the workflow run"
+echo_stderr "Please head to 'https://orcaui.$(get_hostname_from_ssm)/workflows/workflowRuns/${workflow_run_orcabus_id}' to track the status of the workflow run"
