@@ -23,6 +23,12 @@ def handler(event, context):
     status = event.get("status", None)
     engine_parameters = event.get("engineParameters", None)
 
+    # The draft payload may be empty ({}) or None when the workflow run has no
+    # payload yet (get_payload returns {"payload": {}} in that case).
+    # Guard against a None payload before accessing its keys.
+    if payload is None:
+        payload = {}
+
     # Get the upstream stuff
     data_files = upstream_data.get('dataFiles', None)
 
@@ -56,7 +62,7 @@ def handler(event, context):
 
     # Set the payload in the draft workflow run update object
     draft_workflow_update["payload"] = {
-        "version": payload["version"],
+        "version": payload.get("version"),
         "data": payload.get("data", {})
     }
 
