@@ -204,10 +204,20 @@
                 "JitterStrategy": "FULL"
               }
             ],
-            "Next": "Compare Payload",
+            "Next": "Status is terminal",
             "Assign": {
               "workflowRunUpdateMapIter": "{% $states.result.Payload.workflowRunUpdate %}"
             }
+          },
+          "Status is terminal": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Next": "Workflow Run Update Event",
+                "Condition": "{% $statusMapIter in ['SUCCEEDED', 'FAILED'] %}"
+              }
+            ],
+            "Default": "Compare Payload"
           },
           "Compare Payload": {
             "Type": "Task",
