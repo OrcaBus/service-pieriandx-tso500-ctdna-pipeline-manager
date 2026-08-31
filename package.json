@@ -20,7 +20,7 @@
     "organization": true
   },
   "license": "MIT",
-  "packageManager": "pnpm@11.7.0+sha512.19cc852c120c7125760f2443ee6be0ca5b40f9f50598de1a09a1f177503e010e57c23c77646e01e761de59bf874fb22a3398c33ab9691fc13eb946b6f0f4d620",
+  "packageManager": "pnpm@11.24.0+sha512.bd27e345e976dcb0be0b7a1228217b049a817e21b1f355c90dbe7dc46671895a8bc1e6d06c24554505ea93ea0b45f489a27ec1bfbc8de6a9659fca0f16fa0000",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/jest": "^30.0.0",
@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@aws-cdk/aws-lambda-python-alpha": "2.259.0-alpha.0",
-    "@orcabus/platform-cdk-constructs": "1.7.2",
+    "@orcabus/platform-cdk-constructs": "1.9.3",
     "aws-cdk-lib": "^2.263.0",
     "constructs": "^10.7.2"
   }
