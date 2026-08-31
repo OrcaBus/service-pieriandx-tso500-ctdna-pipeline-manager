@@ -50,6 +50,17 @@ def handler(event, context):
         payload["data"]["inputs"] = payload["data"].get("inputs", {})
         payload["data"]["inputs"]["dataFiles"] = data_files
 
+    # Drop any null-valued inputs. On the early tags/engineParameters-changed
+    # path the input fields (caseMetadata, dagVersion, dataFiles, ...) are not
+    # yet resolved and arrive as null - we don't want to carry null keys into
+    # the emitted payload.
+    if payload.get("data", {}).get("inputs", None) is not None:
+        payload["data"]["inputs"] = {
+            input_key: input_value
+            for input_key, input_value in payload["data"]["inputs"].items()
+            if input_value is not None
+        }
+
     # Get status
     if status is not None:
         draft_workflow_update['status'] = status

@@ -262,23 +262,8 @@
           "JitterStrategy": "FULL"
         }
       ],
-      "Next": "Put DRAFT update event (tags changed)",
+      "Next": "Generate WRU Event Detail",
       "Output": "{% $states.input %}"
-    },
-    "Put DRAFT update event (tags changed)": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::events:putEvents",
-      "Arguments": {
-        "Entries": [
-          {
-            "Detail": "{% $merge([\n  $detail,\n  {\n    \"id\": null,\n    \"status\": \"${__draft_status__}\",\n    \"timestamp\": $states.context.State.EnteredTime,\n    \"libraries\": $librariesList,\n    \"payload\": (\n      $merge([\n        $payload,\n        {\n          \"refId\": null,\n          \"data\": (\n            {\n              \"inputs\": ( $inputs ? $inputs : null ),\n              \"tags\": ( $tags ? $tags : null )\n            }\n            ~> $sift(function($v, $k){$v != null})\n          )\n        }\n      ])\n      ~> $sift(function($v, $k){$v != null})\n    )\n  }\n])\n~> $sift(function($v, $k){$v != null}) %}",
-            "DetailType": "${__workflow_run_update_event_detail_type__}",
-            "EventBusName": "${__event_bus_name__}",
-            "Source": "${__stack_source__}"
-          }
-        ]
-      },
-      "End": true
     },
     "Add updating inputs comment": {
       "Type": "Task",
@@ -641,21 +626,21 @@
         "FunctionName": "${__generate_wru_event_object_with_merged_data_lambda_function_arn__}",
         "Payload": {
           "portalRunId": "{% $detail.portalRunId %}",
-          "libraries": "{% $libraries %}",
+          "libraries": "{% $exists($libraries) ? $libraries : null %}",
           "payload": {
             "version": "${__default_payload_version__}",
             "data": {
               "tags": "{% $tags %}",
               "inputs": {
-                "caseMetadata": "{% $caseMetadata %}",
+                "caseMetadata": "{% $exists($caseMetadata) ? $caseMetadata : null %}",
                 "panelVersion": "{% $tags.panelVersion %}",
-                "dagVersion": "{% $dagVersion %}",
+                "dagVersion": "{% $exists($dagVersion) ? $dagVersion : null %}",
                 "instrumentRunId": "{% $tags.instrumentRunId %}"
               }
             }
           },
           "upstreamData": {
-            "dataFiles": "{% $dataFiles %}"
+            "dataFiles": "{% $exists($dataFiles) ? $dataFiles : null %}"
           }
         }
       },
