@@ -626,21 +626,21 @@
         "FunctionName": "${__generate_wru_event_object_with_merged_data_lambda_function_arn__}",
         "Payload": {
           "portalRunId": "{% $detail.portalRunId %}",
-          "libraries": "{% $exists($libraries) ? $libraries : null %}",
+          "libraries": "{% $libraries ? $libraries : null %}",
           "payload": {
             "version": "${__default_payload_version__}",
             "data": {
               "tags": "{% $tags %}",
               "inputs": {
-                "caseMetadata": "{% $exists($caseMetadata) ? $caseMetadata : null %}",
+                "caseMetadata": "{% $caseMetadata ? $caseMetadata : null %}",
                 "panelVersion": "{% $tags.panelVersion %}",
-                "dagVersion": "{% $exists($dagVersion) ? $dagVersion : null %}",
+                "dagVersion": "{% $dagVersion ? $dagVersion : null %}",
                 "instrumentRunId": "{% $tags.instrumentRunId %}"
               }
             }
           },
           "upstreamData": {
-            "dataFiles": "{% $exists($dataFiles) ? $dataFiles : null %}"
+            "dataFiles": "{% $dataFiles ? $dataFiles : null %}"
           }
         }
       },
