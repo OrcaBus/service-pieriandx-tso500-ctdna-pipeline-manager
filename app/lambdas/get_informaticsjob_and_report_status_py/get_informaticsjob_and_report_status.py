@@ -19,7 +19,6 @@ Also return the DynamoDB object to the expression reference and the object dict 
 the object can vary depending on what status the job / report is at
 
 job_status:  STR VALUE OF THE JOB STATUS
-job_status_bool:  BOOL VALUE OF THE JOB STATUS  TRUE IF COMPLETE, FALSE IF FAILED, NONE OTHERWISE
 report_id:  INT VALUE OF THE REPORT ID
 report_status: STR VALUE OF THE REPORT STATUS
 report_status_bool: BOOL VALUE OF THE REPORT STATUS  TRUE IF COMPLETE, FALSE IF FAILED, NONE OTHERWISE
@@ -30,7 +29,7 @@ update_expression_str: STR OF THE UPDATE EXPRESSION FOR DYNAMODB
 """
 
 # Standard imports
-from typing import cast
+from os import environ
 import logging
 
 # Orcabus API tooling
@@ -38,6 +37,7 @@ from orcabus_api_tools.workflow import (
     get_workflow_run_from_portal_run_id,
     add_comment_to_workflow_run,
 )
+from orcabus_api_tools.utils.aws_helpers import get_ssm_value
 
 # Layer imports
 from pieriandx_tools.pieriandx_helpers import get_pieriandx_client
@@ -47,15 +47,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-JOB_STATUS_BOOL = {
-    "waiting": None,
-    "ready": None,
-    "running": None,
-    "complete": True,
-    "failed": False,
-    "canceled": False
-}
+# Environment variables
+MAX_ATTEMPTS_SSM_PARAMETER_NAME_ENV_VAR = "MAX_ATTEMPTS_SSM_PARAMETER_NAME"
 
+# Comment author for workflow run comments posted by this service
+COMMENT_AUTHOR = "pieriandx-monitoring-service"
+
+# Maximum number of informatics job attempts (original + retries) before a run is marked FAILED.
+# Read once from SSM at module load time.
+MAX_ATTEMPTS = int(get_ssm_value(environ[MAX_ATTEMPTS_SSM_PARAMETER_NAME_ENV_VAR]))
 
 REPORT_STATUS_BOOL = {
     "waiting": None,
