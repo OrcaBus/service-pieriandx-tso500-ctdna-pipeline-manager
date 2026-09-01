@@ -30,7 +30,14 @@ update_expression_str: STR OF THE UPDATE EXPRESSION FOR DYNAMODB
 """
 
 # Standard imports
+from typing import cast
 import logging
+
+# Orcabus API tooling
+from orcabus_api_tools.workflow import (
+    get_workflow_run_from_portal_run_id,
+    add_comment_to_workflow_run,
+)
 
 # Layer imports
 from pieriandx_tools.pieriandx_helpers import get_pieriandx_client
@@ -76,6 +83,7 @@ def handler(event, context):
 
     # Get event values
     case_id = event.get("caseId", None)
+    portal_run_id = event.get("portalRunId", None)
     max_retries = event.get("maxRetries", 1)
 
     # Get the case data
