@@ -118,6 +118,12 @@ def handler(event, context):
 
     if job_status == "failed":
         if (max_retries + 1) < len(case_data.get("informaticsJobs")):
+            # Write a comment on the workflow run,
+            add_comment_to_workflow_run(
+                workflow_run_orcabus_id=get_workflow_run_from_portal_run_id(cast(str, portal_run_id))['orcabusId'],
+                comment=f"informatics job {job_id} has failed, retrying with a new job submission"
+            )
+
             # Get the latest
             sequencerrun_run_id = case_data['sequencerRuns'][0]['runId']
             sequencerrun_specimen_object = case_data['sequencerRuns'][0]['specimens'][0]
@@ -143,9 +149,15 @@ def handler(event, context):
             # Get the new job id
             job_id = job_obj.json()['jobId']
 
+            # Write a comment on the workflow run,
+            add_comment_to_workflow_run(
+                workflow_run_orcabus_id=get_workflow_run_from_portal_run_id(cast(str, portal_run_id))['orcabusId'],
+                comment=f"New job id assigned, {job_id}"
+            )
+
             return {
                 "informaticsjobId": job_id,
-                "status": "RUNNABLE",
+                "status": "RUNNING",
                 "reportId": -1,
             }
 
