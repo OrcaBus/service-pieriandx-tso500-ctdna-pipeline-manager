@@ -28,7 +28,7 @@ Payload will look a bit like this:
 """
 
 # Standard Imports
-from typing import Dict
+from typing import Dict, Optional, List, TypedDict
 
 import pytz
 from datetime import datetime
@@ -59,6 +59,39 @@ DEFAULT_SPECIMEN_CODE = 122561005
 DEFAULT_SPECIMEN_LABEL = 'primarySpecimen'
 
 
+# Models
+class CaseAccessionModel(TypedDict):
+    id: str
+    accessionNumber: str
+    assignee: List[str]
+    dateCreated: str
+
+
+def get_new_case_accession_number(library_id: str) -> str:
+    # Generate the case accession number
+    counter = 1
+    response: Optional[List[CaseAccessionModel]] = get_pieriandx_client()._get_api(
+        endpoint=f"/case",
+        params={
+            "accessionNumber": library_id,
+        }
+    )
+    if response is None:
+        return f"{library_id}_{str(counter).zfill(3)}"
+
+    # Get all existing library accession numbers
+    existing_library_accession_numbers = list(map(
+        lambda response_list_iter_: response_list_iter_['accessionNumber'],
+        response
+    ))
+
+    while True:
+        case_accession_number = f"{library_id}_{str(counter).zfill(3)}"
+        if case_accession_number not in existing_library_accession_numbers:
+            return case_accession_number
+        counter += 1
+
+
 def handler(event, context) -> Dict:
     # Return payload of case metadata
     library_id = event["libraryId"]
@@ -69,21 +102,8 @@ def handler(event, context) -> Dict:
     if redcap_dict is None:
         redcap_dict = {}
 
-    # Generate the case accession number
-    counter = 1
-    while True:
-        case_accession_number = f"{library_id}_{str(counter).zfill(3)}"
-        # Check if the case accession number exists in PierianDx
-        response = get_pieriandx_client()._get_api(
-            endpoint=f"/case",
-            params={
-                "accessionNumber": case_accession_number,
-            }
-        )
-
-        if response is None:
-            break
-        counter += 1
+    # Get the case accession number
+    case_accession_number = get_new_case_accession_number(library_id)
 
     # Get the external specimen id from the event
     library_obj: Library = get_library_from_library_id(library_id)
