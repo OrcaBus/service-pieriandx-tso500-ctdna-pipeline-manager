@@ -111,8 +111,7 @@
               "FunctionName": "${__get_informaticsjob_and_report_status_lambda_function_arn__}",
               "Payload": {
                 "caseId": "{% $engineParametersMapIter.caseId %}",
-                "portalRunId": "{% $portalRunIdMapIter %}",
-                "maxRetries": "{% ${__max_informatics_job_retries__} ~> $number %}"
+                "portalRunId": "{% $portalRunIdMapIter %}"
               }
             },
             "Retry": [

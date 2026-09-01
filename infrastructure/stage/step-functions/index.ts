@@ -27,7 +27,6 @@ import {
   WORKFLOW_RUN_UPDATE_DETAIL_TYPE,
   MONITOR_EVENT_RULE_NAME,
   RUNNABLE_STATUS,
-  MAX_INFORMATICS_JOB_RETRIES,
 } from '../constants';
 import { Construct } from 'constructs';
 import { camelCaseToSnakeCase } from '../utils';
@@ -96,9 +95,6 @@ function createStateMachineDefinitionSubstitutions(props: BuildStepFunctionProps
     // Sequencer s3 path
     definitionSubstitutions['__sequencerrun_s3_path_ssm_parameter__'] =
       props.ssmParameterPaths.sequencerrunRoot;
-
-    // Max retries
-    definitionSubstitutions['__max_informatics_job_retries__'] = MAX_INFORMATICS_JOB_RETRIES.toString()
   }
 
   if (sfnRequirements.needsEventRulePermissions) {
