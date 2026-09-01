@@ -24,6 +24,7 @@ export const EVENT_SCHEMAS_DIR = path.join(APP_ROOT, 'event-schemas');
 /* Workflow constants */
 export const WORKFLOW_NAME = 'pieriandx-tso500-ctdna';
 export const DEFAULT_PAYLOAD_VERSION = '2025.09.25';
+export const MAX_INFORMATICS_JOB_RETRIES = 3;
 
 /* Event constants */
 export const EVENT_BUS_NAME = 'OrcaBusMain';
