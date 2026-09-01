@@ -24,6 +24,7 @@ export const EVENT_SCHEMAS_DIR = path.join(APP_ROOT, 'event-schemas');
 /* Workflow constants */
 export const WORKFLOW_NAME = 'pieriandx-tso500-ctdna';
 export const DEFAULT_PAYLOAD_VERSION = '2025.09.25';
+export const MAX_INFORMATICS_JOB_ATTEMPTS = 3;
 
 /* Event constants */
 export const EVENT_BUS_NAME = 'OrcaBusMain';
@@ -230,6 +231,9 @@ export const SSM_PARAMETER_PATH_SEQUENCER_ROOT = path.join(
   SSM_PARAMETER_PATH_PREFIX,
   'sequencer-root'
 );
+
+// Max informatics job attempts
+export const SSM_PARAMETER_PATH_MAX_ATTEMPTS = path.join(SSM_PARAMETER_PATH_PREFIX, 'max-attempts');
 
 // Dag parameters
 export const SSM_PARAMETER_PATH_DEFAULT_DAG_VERSION = path.join(

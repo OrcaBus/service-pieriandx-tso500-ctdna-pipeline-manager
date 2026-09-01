@@ -7,6 +7,7 @@ import {
   DEFAULT_PAYLOAD_VERSION,
   EVENT_BUS_NAME,
   INSTITUTION,
+  MAX_INFORMATICS_JOB_ATTEMPTS,
   PANEL_MAP,
   PROJECT_INFO_DEFAULT,
   PROJECT_INFO_MAP,
@@ -28,6 +29,7 @@ import {
   SSM_PARAMETER_PATH_PROJECT_INFO_BY_PROJECT_TYPE_PREFIX,
   SSM_PARAMETER_PATH_S3_DISEASE_TREE,
   SSM_PARAMETER_PATH_S3_SPECIMEN_TYPE_MAP,
+  SSM_PARAMETER_PATH_MAX_ATTEMPTS,
   SSM_PARAMETER_PATH_SEQUENCER_ROOT,
   SSM_PARAMETER_PATH_WORKFLOW_NAME,
   USER_EMAIL,
@@ -49,6 +51,9 @@ export const getSsmParameterValues = (stage: StageName): SsmParameterValues => {
 
     // Sequencerrun Prefix
     sequencerrunRoot: S3_SEQUENCERRUN_ROOT[stage],
+
+    // Max informatics job attempts
+    maxAttempts: MAX_INFORMATICS_JOB_ATTEMPTS.toString(),
 
     // Dag
     dagNameByDagVersionMap: DAG_MAP,
@@ -84,6 +89,9 @@ export const getSsmParameterPaths = (): SsmParameterPaths => {
 
     // Sequencerrun Prefix
     sequencerrunRoot: SSM_PARAMETER_PATH_SEQUENCER_ROOT,
+
+    // Max informatics job attempts
+    maxAttempts: SSM_PARAMETER_PATH_MAX_ATTEMPTS,
 
     // Dag
     dagNameByDagVersionPrefix: SSM_PARAMETER_PATH_PREFIX_DAG_NAME_BY_DAG_VERSION_PREFIX,

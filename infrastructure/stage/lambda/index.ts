@@ -241,6 +241,16 @@ function buildLambda(scope: Construct, props: BuildLambdaInput): LambdaObject {
     );
   }
 
+  /*
+    Max informatics job attempts SSM parameter, read at runtime by the monitor status lambda
+   */
+  if (lambdaRequirements.needsMaxAttempts) {
+    lambdaFunction.addEnvironment(
+      'MAX_ATTEMPTS_SSM_PARAMETER_NAME',
+      props.ssmParameterNames.maxAttempts
+    );
+  }
+
   /* Return the function */
   return {
     lambdaName: props.lambdaName,

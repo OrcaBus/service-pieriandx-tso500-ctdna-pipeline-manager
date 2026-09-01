@@ -19,7 +19,6 @@ Also return the DynamoDB object to the expression reference and the object dict 
 the object can vary depending on what status the job / report is at
 
 job_status:  STR VALUE OF THE JOB STATUS
-job_status_bool:  BOOL VALUE OF THE JOB STATUS  TRUE IF COMPLETE, FALSE IF FAILED, NONE OTHERWISE
 report_id:  INT VALUE OF THE REPORT ID
 report_status: STR VALUE OF THE REPORT STATUS
 report_status_bool: BOOL VALUE OF THE REPORT STATUS  TRUE IF COMPLETE, FALSE IF FAILED, NONE OTHERWISE
@@ -30,7 +29,15 @@ update_expression_str: STR OF THE UPDATE EXPRESSION FOR DYNAMODB
 """
 
 # Standard imports
+from os import environ
 import logging
+
+# Orcabus API tooling
+from orcabus_api_tools.workflow import (
+    get_workflow_run_from_portal_run_id,
+    add_comment_to_workflow_run,
+)
+from orcabus_api_tools.utils.aws_helpers import get_ssm_value
 
 # Layer imports
 from pieriandx_tools.pieriandx_helpers import get_pieriandx_client
@@ -40,15 +47,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-JOB_STATUS_BOOL = {
-    "waiting": None,
-    "ready": None,
-    "running": None,
-    "complete": True,
-    "failed": False,
-    "canceled": False
-}
+# Environment variables
+MAX_ATTEMPTS_SSM_PARAMETER_NAME_ENV_VAR = "MAX_ATTEMPTS_SSM_PARAMETER_NAME"
 
+# Comment author for workflow run comments posted by this service
+COMMENT_AUTHOR = "pieriandx-monitoring-service"
+
+# Maximum number of informatics job attempts (original + retries) before a run is marked FAILED.
+# Read once from SSM at module load time.
+MAX_ATTEMPTS = int(get_ssm_value(environ[MAX_ATTEMPTS_SSM_PARAMETER_NAME_ENV_VAR]))
 
 REPORT_STATUS_BOOL = {
     "waiting": None,
@@ -76,7 +83,14 @@ def handler(event, context):
 
     # Get event values
     case_id = event.get("caseId", None)
-    max_retries = event.get("maxRetries", 1)
+    portal_run_id = event.get("portalRunId", None)
+
+    # portalRunId should always be provided by the monitor state machine
+    if portal_run_id is None:
+        raise ValueError("portalRunId is required but was not provided in the event")
+
+    # Resolve the workflow run orcabus id once for commentary
+    workflow_run = get_workflow_run_from_portal_run_id(portal_run_id)
 
     # Get the case data
     case_data = pyriandx_client._get_api(
@@ -95,13 +109,23 @@ def handler(event, context):
 
     # Get job status
     job_status = informatics_job_obj.get("status")
-    if job_status in ['waiting', 'ready']:
+    if (
+            job_status in ['waiting', 'ready']
+    ):
+        if workflow_run['currentState']['status'] == 'RUNNING':
+            # We cannot go back to a runnable state
+            # So we return the job as if its running
+            return {
+                "informaticsjobId": job_id,
+                "status": "RUNNING",
+                "reportId": -1,
+            }
         return {
             "informaticsjobId": job_id,
             "status": "RUNNABLE",
             "reportId": -1,
         }
-    if job_status in ['running', 'completed']:
+    if job_status in ['running']:
         return {
             "informaticsjobId": job_id,
             "status": "RUNNING",
@@ -109,7 +133,15 @@ def handler(event, context):
         }
 
     if job_status == "failed":
-        if (max_retries + 1) < len(case_data.get("informaticsJobs")):
+        num_jobs = len(case_data.get("informaticsJobs"))
+        if num_jobs < MAX_ATTEMPTS:
+            # Write a comment on the workflow run,
+            add_comment_to_workflow_run(
+                workflow_run_orcabus_id=workflow_run['orcabusId'],
+                comment=f"informatics job {job_id} has failed, retrying with a new job submission",
+                author=COMMENT_AUTHOR,
+            )
+
             # Get the latest
             sequencerrun_run_id = case_data['sequencerRuns'][0]['runId']
             sequencerrun_specimen_object = case_data['sequencerRuns'][0]['specimens'][0]
@@ -135,9 +167,16 @@ def handler(event, context):
             # Get the new job id
             job_id = job_obj.json()['jobId']
 
+            # Write a comment on the workflow run,
+            add_comment_to_workflow_run(
+                workflow_run_orcabus_id=workflow_run['orcabusId'],
+                comment=f"New job id assigned, {job_id}",
+                author=COMMENT_AUTHOR,
+            )
+
             return {
                 "informaticsjobId": job_id,
-                "status": "RUNNABLE",
+                "status": "RUNNING",
                 "reportId": -1,
             }
 

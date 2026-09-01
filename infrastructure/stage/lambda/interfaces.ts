@@ -87,6 +87,7 @@ export interface LambdaRequirements {
   needsExtendedTimeout?: boolean;
   needsWorkflowInfo?: boolean;
   needsRepoUrl?: boolean;
+  needsMaxAttempts?: boolean;
 }
 
 // Lambda requirements mapping
@@ -187,6 +188,7 @@ export const lambdaRequirementsMap: Record<LambdaNameList, LambdaRequirements> =
   getInformaticsjobAndReportStatus: {
     needsPieriandxLayerAccess: true,
     needsOrcabusApiTools: true,
+    needsMaxAttempts: true,
   },
 };
 

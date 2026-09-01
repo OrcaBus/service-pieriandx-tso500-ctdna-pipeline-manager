@@ -110,7 +110,8 @@
             "Arguments": {
               "FunctionName": "${__get_informaticsjob_and_report_status_lambda_function_arn__}",
               "Payload": {
-                "caseId": "{% $engineParametersMapIter.caseId %}"
+                "caseId": "{% $engineParametersMapIter.caseId %}",
+                "portalRunId": "{% $portalRunIdMapIter %}"
               }
             },
             "Retry": [

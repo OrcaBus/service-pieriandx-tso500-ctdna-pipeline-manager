@@ -13,6 +13,9 @@ export interface SsmParameterValues {
   // Sequencerrun Prefix
   sequencerrunRoot: string;
 
+  // Max informatics job attempts
+  maxAttempts: string;
+
   // Dag
   dagNameByDagVersionMap: Record<DagVersion, Dag>;
   defaultDagVersion: string;
@@ -45,6 +48,9 @@ export interface SsmParameterPaths {
 
   // Sequencerrun Prefix
   sequencerrunRoot: string;
+
+  // Max informatics job attempts
+  maxAttempts: string;
 
   // Dag
   dagNameByDagVersionPrefix: string;
