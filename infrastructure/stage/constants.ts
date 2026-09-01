@@ -87,8 +87,12 @@ export const DAG_MAP: Record<DagVersion, Dag> = {
     name: 'cromwell_tso500_ctdna_workflow_1.0.4',
     description: 'tso500_ctdna_workflow',
   },
+  '1.0.6': {
+    name: 'cromwell_tso500_ctdna_workflow_1.0.6',
+    description: 'tso500_ctdna_workflow',
+  },
 };
-export const DEFAULT_DAG_VERSION: DagVersion = '1.0.4';
+export const DEFAULT_DAG_VERSION: DagVersion = '1.0.6';
 
 export const PROJECT_INFO_MAP: Record<ProjectName, ProjectInfo> = {
   PO: {

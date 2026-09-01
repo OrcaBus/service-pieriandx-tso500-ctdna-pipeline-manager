@@ -5,7 +5,7 @@ export type PayloadVersionType = '2025.09.25';
 
 export const payloadVersionList: PayloadVersionType[] = ['2025.09.25'];
 
-export type DagVersion = '1.0.4';
+export type DagVersion = '1.0.4' | '1.0.6';
 
 export type PanelName = 'main' | 'subpanel';
 
