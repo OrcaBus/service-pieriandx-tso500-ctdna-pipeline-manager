@@ -84,7 +84,13 @@ def handler(event, context):
     # Get event values
     case_id = event.get("caseId", None)
     portal_run_id = event.get("portalRunId", None)
-    max_retries = event.get("maxRetries", 1)
+
+    # portalRunId should always be provided by the monitor state machine
+    if portal_run_id is None:
+        raise ValueError("portalRunId is required but was not provided in the event")
+
+    # Resolve the workflow run orcabus id once for commentary
+    workflow_run = get_workflow_run_from_portal_run_id(portal_run_id)
 
     # Get the case data
     case_data = pyriandx_client._get_api(
@@ -103,13 +109,23 @@ def handler(event, context):
 
     # Get job status
     job_status = informatics_job_obj.get("status")
-    if job_status in ['waiting', 'ready']:
+    if (
+            job_status in ['waiting', 'ready']
+    ):
+        if workflow_run['currentState']['status'] == 'RUNNING':
+            # We cannot go back to a runnable state
+            # So we return the job as if its running
+            return {
+                "informaticsjobId": job_id,
+                "status": "RUNNING",
+                "reportId": -1,
+            }
         return {
             "informaticsjobId": job_id,
             "status": "RUNNABLE",
             "reportId": -1,
         }
-    if job_status in ['running', 'completed']:
+    if job_status in ['running']:
         return {
             "informaticsjobId": job_id,
             "status": "RUNNING",
@@ -117,11 +133,13 @@ def handler(event, context):
         }
 
     if job_status == "failed":
-        if (max_retries + 1) < len(case_data.get("informaticsJobs")):
+        num_jobs = len(case_data.get("informaticsJobs"))
+        if num_jobs < MAX_ATTEMPTS:
             # Write a comment on the workflow run,
             add_comment_to_workflow_run(
-                workflow_run_orcabus_id=get_workflow_run_from_portal_run_id(cast(str, portal_run_id))['orcabusId'],
-                comment=f"informatics job {job_id} has failed, retrying with a new job submission"
+                workflow_run_orcabus_id=workflow_run['orcabusId'],
+                comment=f"informatics job {job_id} has failed, retrying with a new job submission",
+                author=COMMENT_AUTHOR,
             )
 
             # Get the latest
@@ -151,8 +169,9 @@ def handler(event, context):
 
             # Write a comment on the workflow run,
             add_comment_to_workflow_run(
-                workflow_run_orcabus_id=get_workflow_run_from_portal_run_id(cast(str, portal_run_id))['orcabusId'],
-                comment=f"New job id assigned, {job_id}"
+                workflow_run_orcabus_id=workflow_run['orcabusId'],
+                comment=f"New job id assigned, {job_id}",
+                author=COMMENT_AUTHOR,
             )
 
             return {
