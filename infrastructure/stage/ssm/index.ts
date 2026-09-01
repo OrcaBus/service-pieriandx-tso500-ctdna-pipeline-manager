@@ -57,6 +57,14 @@ export function buildSsmParameters(scope: Construct, props: BuildSsmParameterPro
   });
 
   /**
+   * Max informatics job attempts
+   */
+  new ssm.StringParameter(scope, 'max-attempts', {
+    parameterName: props.ssmParameterPaths.maxAttempts,
+    stringValue: props.ssmParameterValues.maxAttempts,
+  });
+
+  /**
    * Dag stuff
    */
   // Dag configuration map
