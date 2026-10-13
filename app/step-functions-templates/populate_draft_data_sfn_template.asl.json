@@ -487,6 +487,15 @@
                 "Name": "${__dag_version_default_ssm_parameter_path__}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+              "Retry": [
+                {
+                  "ErrorEquals": ["Ssm.ThrottlingException"],
+                  "IntervalSeconds": 10,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "MaxDelaySeconds": 60
+                }
+              ],
               "End": true,
               "Output": {
                 "dagVersion": "{% $states.result.Parameter.Value %}"

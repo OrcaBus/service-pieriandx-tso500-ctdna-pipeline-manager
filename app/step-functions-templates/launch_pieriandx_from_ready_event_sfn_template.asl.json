@@ -25,6 +25,15 @@
                 "Name": "{% $data.inputs.dagVersion ? '${__dag_version_ssm_parameter_prefix__}/' & $data.inputs.dagVersion : '${__dag_version_default_ssm_parameter_path__}' %}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+              "Retry": [
+                {
+                  "ErrorEquals": ["Ssm.ThrottlingException"],
+                  "IntervalSeconds": 10,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "MaxDelaySeconds": 60
+                }
+              ],
               "End": true,
               "Output": {
                 "dag": "{% $parse($states.result.Parameter.Value) %}"
@@ -41,6 +50,15 @@
                 "Name": "{% $data.inputs.panelVersion ? '${__panel_name_ssm_parameter_prefix__}/' & $data.inputs.panelVersion : '${__panel_name_default_ssm_parameter_path__}' %}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+              "Retry": [
+                {
+                  "ErrorEquals": ["Ssm.ThrottlingException"],
+                  "IntervalSeconds": 10,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "MaxDelaySeconds": 60
+                }
+              ],
               "End": true,
               "Output": {
                 "panelId": "{% $states.result.Parameter.Value %}"
@@ -57,6 +75,15 @@
                 "Name": "${__sequencerrun_s3_path_ssm_parameter__}"
               },
               "Resource": "arn:aws:states:::aws-sdk:ssm:getParameter",
+              "Retry": [
+                {
+                  "ErrorEquals": ["Ssm.ThrottlingException"],
+                  "IntervalSeconds": 10,
+                  "MaxAttempts": 3,
+                  "BackoffRate": 2,
+                  "MaxDelaySeconds": 60
+                }
+              ],
               "End": true,
               "Output": {
                 "sequencerrunRoot": "{% $states.result.Parameter.Value %}"
