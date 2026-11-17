@@ -7,6 +7,7 @@
       "Next": "Get Inputs from SSM",
       "Assign": {
         "portalRunId": "{% $states.input.portalRunId %}",
+        "workflowRunId": "{% $states.input.orcabusId %}",
         "workflowRunName": "{% $states.input.workflowRunName %}",
         "libraries": "{% $states.input.libraries %}",
         "payload": "{% $states.input.payload %}",
@@ -128,8 +129,9 @@
           "JitterStrategy": "FULL"
         }
       ],
-      "Next": "Create Case",
+      "Next": "Calculate Time to Wait Before Generating Case",
       "Assign": {
+        "datesList": "{% $states.result.Payload.datesList %}",
         "caseCreationObj": "{% $states.result.Payload.caseCreationObj %}",
         "sequencerrunCreationObj": "{% $states.result.Payload.sequencerrunCreationObj %}",
         "informaticsjobCreationObj": "{% $states.result.Payload.informaticsjobCreationObj %}",
@@ -137,6 +139,77 @@
         "sequencerrunS3Path": "{% $states.result.Payload.sequencerrunS3Path %}",
         "sampleName": "{% $states.result.Payload.sampleName %}"
       }
+    },
+    "Calculate Time to Wait Before Generating Case": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__calculate_time_to_wait_before_generating_case_lambda_function_arn__}",
+        "Payload": {
+          "datesList": "{% $datesList %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Need to Wait Before Generating Case?",
+      "Assign": {
+        "timeToWaitBeforeGeneratingCase": "{% $states.result.Payload.timeToWaitBeforeGeneratingCase %}",
+        "latestTimestamp": "{% $states.result.Payload.latestTimestamp %}"
+      }
+    },
+    "Need to Wait Before Generating Case?": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Condition": "{% $timeToWaitBeforeGeneratingCase > 0 %}",
+          "Next": "Add Waiting for Timepoint Comment"
+        }
+      ],
+      "Default": "Create Case"
+    },
+    "Add Waiting for Timepoint Comment": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${__add_waiting_for_timepoint_comment_lambda_function_arn__}",
+        "Payload": {
+          "workflowRunId": "{% $workflowRunId %}",
+          "latestTimestamp": "{% $latestTimestamp %}",
+          "executionArn": "{% $states.context.Execution.Id %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
+        }
+      ],
+      "Next": "Wait Before Generating Case"
+    },
+    "Wait Before Generating Case": {
+      "Type": "Wait",
+      "Seconds": "{% $timeToWaitBeforeGeneratingCase %}",
+      "Next": "Create Case"
     },
     "Create Case": {
       "Type": "Task",
