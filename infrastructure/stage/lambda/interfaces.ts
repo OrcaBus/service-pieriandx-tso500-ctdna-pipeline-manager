@@ -31,6 +31,8 @@ export type LambdaNameList =
   | 'addPopulateDraftComment'
   // Ready to PierianDx Submission
   | 'generatePieriandxObjects'
+  | 'calculateTimeToWaitBeforeGeneratingCase'
+  | 'addWaitingForTimepointComment'
   | 'generateCase'
   | 'generateSequencerrun'
   | 'generateInformaticsjob'
@@ -66,6 +68,8 @@ export const lambdaNameList: LambdaNameList[] = [
   'addPopulateDraftComment',
   // Ready to PierianDx Submission
   'generatePieriandxObjects',
+  'calculateTimeToWaitBeforeGeneratingCase',
+  'addWaitingForTimepointComment',
   'generateCase',
   'generateSequencerrun',
   'generateInformaticsjob',
@@ -160,6 +164,11 @@ export const lambdaRequirementsMap: Record<LambdaNameList, LambdaRequirements> =
   generatePieriandxObjects: {
     needsPieriandxLayerAccess: true,
     needsOrcabusApiTools: true,
+  },
+  calculateTimeToWaitBeforeGeneratingCase: {},
+  addWaitingForTimepointComment: {
+    needsOrcabusApiTools: true,
+    needsWorkflowInfo: true,
   },
   generateCase: {
     needsPieriandxLayerAccess: true,

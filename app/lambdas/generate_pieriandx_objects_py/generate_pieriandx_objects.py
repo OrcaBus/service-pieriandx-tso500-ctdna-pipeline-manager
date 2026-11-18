@@ -74,6 +74,9 @@ We then use pydantic to validate the input and generate the following outputs
 # Standard imports
 import logging
 import pandas as pd
+import pytz
+
+# External Layer imports
 from v2_samplesheet_maker.functions.v2_samplesheet_writer import v2_samplesheet_writer
 
 # Pieriandx layer imports
@@ -89,6 +92,9 @@ from pieriandx_tools.pieriandx_models.sequencerrun_creation import SequencerrunC
 from pieriandx_tools.pieriandx_models.specimen_sequencer_info import SpecimenSequencerInfo
 from pieriandx_tools.pieriandx_models.specimen_type import SpecimenType
 from pieriandx_tools.utils.samplesheet_helpers import read_v2_samplesheet
+
+# Globals
+PDX_SERVER_TIMEZONE = pytz.timezone("America/New_York")
 
 TOP_LEVEL_KEYS = [
     "dag",
@@ -169,13 +175,13 @@ def handler(event, context):
             case_accession_number=case_accession_number,
             date_accessioned=pd.to_datetime(
                 case_metadata.get("sampleReception").get("dateAccessioned"),
-            ),
+            ).replace(tzinfo=PDX_SERVER_TIMEZONE),
             date_received=pd.to_datetime(
                 case_metadata.get("sampleReception").get("dateReceived"),
-            ),
+            ).replace(tzinfo=PDX_SERVER_TIMEZONE),
             date_collected=pd.to_datetime(
                 case_metadata.get("sampleReception").get("dateCollected"),
-            ),
+            ).replace(tzinfo=PDX_SERVER_TIMEZONE),
             external_specimen_id=case_metadata.get("externalSpecimenId"),
             specimen_label=case_metadata.get("specimenLabel"),
             gender=case_metadata.get("gender", None),
@@ -302,6 +308,16 @@ def handler(event, context):
         "dataFiles": list(map(lambda data_file_iter: data_file_iter.to_dict(), data_files)),
         "sequencerrunS3Path": sequencerrun_s3_path,
         "sampleName": sample_name,
+        # Timezone aware dates on the case, used to wait until the case is old enough
+        # for the PierianDx (New York) timestamps to be correct
+        "datesList": list(filter(
+            lambda date_iter_: date_iter_ is not None,
+            [
+                case_creation_obj.specimen.date_accessioned.isoformat(timespec='seconds'),
+                case_creation_obj.specimen.date_received.isoformat(timespec='seconds'),
+                case_creation_obj.specimen.date_collected.isoformat(timespec='seconds'),
+            ]
+        )),
     }
 
 

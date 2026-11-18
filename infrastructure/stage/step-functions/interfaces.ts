@@ -128,6 +128,8 @@ export const stepFunctionToLambdasMap: Record<StateMachineName, LambdaNameList[]
   launchPieriandxFromReadyEvent: [
     // Ready to ICAv2 WES lambdas
     'generatePieriandxObjects',
+    'calculateTimeToWaitBeforeGeneratingCase',
+    'addWaitingForTimepointComment',
     'generateCase',
     'generateSequencerrun',
     'generateInformaticsjob',
